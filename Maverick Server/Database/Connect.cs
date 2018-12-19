@@ -1,4 +1,5 @@
-﻿using MySql.Data.MySqlClient;
+﻿using Main;
+using MySql.Data.MySqlClient;
 using NetworkTypes;
 using System;
 using System.Collections.Generic;
@@ -57,6 +58,7 @@ namespace MaverickServer.Database
                     if (reader.Read())
                     {
                         Debug.WriteLine("Reading Version");
+                        Debug.WriteLine("Reading Version");
 
                         Version = ((!reader.IsDBNull(0)) ? reader.GetString(0) : "0.00");
                     }
@@ -96,100 +98,37 @@ namespace MaverickServer.Database
         /// Returns list of all downloadable products and their status's
         /// </summary>
         /// <returns></returns>
-        public List<int> QueryUserProducts(int ID)
+        public List<Product> QueryUserProducts(int ID)
         {
-            List<int> temp = new List<int>();
+            List<Product> temp = new List<Product>();
 
-            //Give all products to MaverickCheats ( Bot )
+            //If IsAdmin (Forum Permission Check?) , give all products
             if (ID == 1)
-            {
-                //Handle Manual Products
-                using (MySqlCommand command = new MySqlCommand("SELECT * FROM Products", connection))
-                {
-                    using (MySqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            Debug.WriteLine("Reading Owned Products");
+                return Cache.Products;
 
-                            int owned = reader.GetInt32(0);
+            //Add Free Products
+            temp.AddRange(Cache.Products.Where(product => product.Free == 1));
 
-                            Debug.WriteLine("Owned Products: " + owned);
-
-                            temp.Add(owned);
-                        }
-                    }
-                }
-
-                return temp;
-            }
-
-            /*
-            //Handle Free Products
-            using (MySqlCommand command = new MySqlCommand("SELECT * FROM Products WHERE Free=1", connection))
-            {
-                using (MySqlDataReader reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        Debug.WriteLine("Reading Free Products");
-
-                        //Get Product ID
-                        int owned = reader.GetInt32(0);
-
-                        if (owned != 0)
-                            temp.Add(owned);
-                    }
-                }
-            }
-
-            //API Request for the Products the Forum Username Owns
+            //API Request for Paid Products
             string Products = new WebClient().DownloadString("http://api.maverickcheats.eu/community/maverickcheats/productcheck.php?UserID=" + ID);
 
-            if (Products != "")
-            {
-                if (Products.Contains(","))
-                {
-                    //Multiple Product IDs
-                    foreach (string ProductIDs in Products.Split(','))
-                    {
-                        //Single Product ID
-                        try
-                        {
-                            int ProductID = Convert.ToInt32(ProductIDs);
+            //No Paid Products
+            if (Products == "")
+                return temp.OrderBy(id => id).ToList();
 
-                            if (Caches.Products.Any(Product => Product.Group == ProductID))
-                            {
-                                foreach (Product product in Caches.Products.Where(Product => Product.Group == ProductID))
-                                    temp.Add(product.Id);
-                            }
-                        }
-                        catch
-                        {
-                            //Not an INT - Ignore
-                        }
-                    }
-                }
-                else
+            //Paid Product Found - Add them
+            foreach (string Product in Products.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries))
+                try
                 {
-                    //Single Product ID
-                    try
-                    {
-                        int ProductID = Convert.ToInt32(Products);
+                    int ProductID = Convert.ToInt32(Product);
 
-                        if (Products.Any(Product => Product.Group == ProductID))
-                        {
-                            foreach (Product product in Products.Where(Product => Product.Group == ProductID))
-                                temp.Add(product.Id);
-                        }
-                    }
-                    catch
-                    {
-                        //Not an INT - Ignore
-                    }
+                    if (Cache.Products.Any(product => product.Group == ProductID))
+                        temp.AddRange(Cache.Products.Where(product => product.Group == ProductID));
                 }
-            }
-            */
+                catch
+                {
+                    //Not an INT - Ignore
+                }
 
             return temp.OrderBy(id => id).ToList();
         }
