@@ -38,43 +38,48 @@ namespace Main
         {
             while (true)
             {
-                //Initial Request
-                NetworkStream strm = client.GetStream();
-
-                IFormatter formatter = new BinaryFormatter();
-
-                Request r = (Request)formatter.Deserialize(strm); // you have to cast the deserialized object 
-
-                //Response
-                Console.WriteLine("Recieved: " + r.Command);
-
-                if (r.Command == "Version")
+                try
                 {
-                    Connect connect = new Connect();
+                    //Initial Request
+                    NetworkStream strm = client.GetStream();
 
-                    formatter.Serialize(strm, new Response("Version", connect.Version()));
+                    IFormatter formatter = new BinaryFormatter();
 
-                    connect.Close();
+                    Request r = (Request)formatter.Deserialize(strm); // you have to cast the deserialized object 
+
+                    //Response
+                    Console.WriteLine("Recieved: " + r.Command);
+
+                    if (r.Command == "Version")
+                    {
+                        Connect connect = new Connect();
+
+                        formatter.Serialize(strm, new Response("Version", connect.Version()));
+
+                        connect.Close();
+                    }
+                    else if (r.Command == "Login")
+                    {
+
+                    }
+                    else if (r.Command == "Products")
+                    {
+
+                    }
+                    else
+                    {
+                        formatter.Serialize(strm, new Response(r.Command, " is an Invalid Command"));
+                    }
                 }
-                else if (r.Command == "Login")
+                catch
                 {
-
-                }
-                else if (r.Command == "Products")
-                {
-
-                }
-                else
-                {
-                    formatter.Serialize(strm, new Response(r.Command, " is an Invalid Command"));
+                    break;
                 }
             }
 
-            strm.Close();
             client.Close();
 
-            Console.Write(" >> " + "exit");
-            Console.ReadLine();
+            Console.Write("Exited Thread " + Thread.CurrentThread.ManagedThreadId);
         }
     }
 }

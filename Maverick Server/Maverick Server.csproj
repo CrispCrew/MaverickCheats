@@ -44,6 +44,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -57,6 +58,7 @@
   <ItemGroup>
     <Compile Include="Cache\Cache.cs" />
     <Compile Include="Database\Connect.cs" />
+    <Compile Include="HandleClient\HandleLogin.cs" />
     <Compile Include="Main.cs">
       <SubType>Form</SubType>
     </Compile>

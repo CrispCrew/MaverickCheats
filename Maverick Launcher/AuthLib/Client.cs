@@ -82,7 +82,7 @@ namespace Main.AuthLib
 
         public string Login(string Username, string Password, string HWID)
         {
-            Request message = new Request("Login", new Login(Username, Password, HWID));
+            Request message = new Request("Login", new NetworkTypes.Login(Username, Password, HWID));
 
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 
