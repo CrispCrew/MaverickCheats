@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Main.AuthLib;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -15,6 +16,15 @@ namespace Main
         public Login()
         {
             InitializeComponent();
+        }
+
+        private void Login_Load(object sender, EventArgs e)
+        {
+            Client client = new Client();
+
+            Console.WriteLine(client.Version());
+
+            Console.WriteLine(client.Login("CrispyCheats", "11OFCfpQFgFYo62VlW50oUWZJhnAV4P6", ""));
         }
     }
 }
