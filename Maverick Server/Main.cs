@@ -7,6 +7,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Windows.Forms;
 using MaverickServer.Database;
+using Main.HandleClient;
 
 namespace Main
 {
@@ -52,15 +53,23 @@ namespace Main
 
                     if (r.Command == "Version")
                     {
+                        Version version = (Version)r.Object;
+
+                        //HandleVersion
                         Connect connect = new Connect();
 
                         formatter.Serialize(strm, new Response("Version", connect.Version()));
 
                         connect.Close();
+
+                        //Return Response
                     }
                     else if (r.Command == "Login")
                     {
+                        Login login = (Login)r.Object;
 
+                        //Login -> Returns False/True and OUT/REF Token*?
+                        string Response = HandleLogin.Login(client, login.Username, login.Password, login.HWID);
                     }
                     else if (r.Command == "Products")
                     {
