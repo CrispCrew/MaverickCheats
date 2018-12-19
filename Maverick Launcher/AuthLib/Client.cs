@@ -1,7 +1,6 @@
 ﻿using NetworkTypes;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
@@ -72,17 +71,27 @@ namespace Main.AuthLib
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 
             NetworkStream strm = clientSocket.GetStream(); // the stream 
-
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             formatter.Serialize(strm, message); // the serialization process 
-
-            Console.WriteLine("Sent: " + message.Command + " in " + stopwatch.Elapsed.TotalMilliseconds + "ms");
 
             Response r = (Response)formatter.Deserialize(strm); // you have to cast the deserialized object 
 
-            Console.WriteLine("Recieved: " + r.Message + " in " + stopwatch.Elapsed.TotalMilliseconds + "ms");
+            Console.WriteLine("Recieved: " + r.Message);
+
+            return (string)r.Object;
+        }
+
+        public string Login(string Username, string Password, string HWID)
+        {
+            Request message = new Request("Login", new Login(Username, Password, HWID));
+
+            IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
+
+            NetworkStream strm = clientSocket.GetStream(); // the stream 
+            formatter.Serialize(strm, message); // the serialization process 
+
+            Response r = (Response)formatter.Deserialize(strm); // you have to cast the deserialized object 
+
+            Console.WriteLine("Recieved: " + r.Message);
 
             return (string)r.Object;
         }

@@ -15,10 +15,6 @@ namespace Main
 {
     public partial class Main : Form
     {
-        public static string Version;
-
-        public static DateTime CahceTime = DateTime.Now;
-
         public Main()
         {
             InitializeComponent();

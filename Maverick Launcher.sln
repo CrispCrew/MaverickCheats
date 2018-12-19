@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2036
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maverick Launcher", "Bunifu\Maverick Launcher.csproj", "{607F90B4-8431-48BD-AA47-C4CF31470210}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Maverick Launcher", "Maverick Launcher\Maverick Launcher.csproj", "{607F90B4-8431-48BD-AA47-C4CF31470210}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0283EB73-320C-4DF6-A1EA-05F762DFB96F} = {0283EB73-320C-4DF6-A1EA-05F762DFB96F}
 	EndProjectSection

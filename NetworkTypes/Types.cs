@@ -138,7 +138,6 @@ namespace NetworkTypes
             this.Image = TryReadProductImage();
         }
 
-        //Remove
         public Product SetFromSQL(MySqlDataReader reader)
         {
             Id = reader.GetInt32(0);

@@ -1,11 +1,12 @@
-﻿using System;
+﻿using NetworkTypes;
+
+using System;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Windows.Forms;
 using MaverickServer.Database;
-using NetworkTypes;
 
 namespace Main
 {
@@ -35,27 +36,38 @@ namespace Main
 
         public void ClientThread(TcpClient client)
         {
-            //Initial Request
-            NetworkStream strm = client.GetStream();
-
-            IFormatter formatter = new BinaryFormatter();
-
-            Request r = (Request)formatter.Deserialize(strm); // you have to cast the deserialized object 
-
-            //Response
-            Console.WriteLine("Recieved: " + r.Command);
-
-            if (r.Command == "Version")
+            while (true)
             {
-                Connect connect = new Connect();
+                //Initial Request
+                NetworkStream strm = client.GetStream();
 
-                formatter.Serialize(strm, new Response("Version", connect.Version()));
+                IFormatter formatter = new BinaryFormatter();
 
-                connect.Close();
-            }
-            else
-            {
-                formatter.Serialize(strm, new Response(r.Command, " is an Invalid Command"));
+                Request r = (Request)formatter.Deserialize(strm); // you have to cast the deserialized object 
+
+                //Response
+                Console.WriteLine("Recieved: " + r.Command);
+
+                if (r.Command == "Version")
+                {
+                    Connect connect = new Connect();
+
+                    formatter.Serialize(strm, new Response("Version", connect.Version()));
+
+                    connect.Close();
+                }
+                else if (r.Command == "Login")
+                {
+
+                }
+                else if (r.Command == "Products")
+                {
+
+                }
+                else
+                {
+                    formatter.Serialize(strm, new Response(r.Command, " is an Invalid Command"));
+                }
             }
 
             strm.Close();
