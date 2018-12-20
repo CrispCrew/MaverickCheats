@@ -1,4 +1,5 @@
 ﻿using MaverickServer.HandleClients.Tokens;
+using NetworkTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace Main.HandleClient
 {
     public class HandleLogin
     {
-        public static string Login(TcpClient client, string Username, string Password, string HWID)
+        public static Response Login(TcpClient client, string Username, string Password, string HWID)
         {
             int UserID = 0;
             string Response = new WebClient().DownloadString("http://api.maverickcheats.eu/community/maverickcheats/login.php?Username=" + HttpUtility.UrlEncode(Username) + "&Password=" + HttpUtility.UrlEncode(Password) + "&HWID=" + HttpUtility.UrlEncode(HWID));
@@ -23,16 +24,16 @@ namespace Main.HandleClient
                 {
                     UserID = Convert.ToInt32(Response.Split('-')[1]);
 
-                    return "Login Found" + "-" + Tokens.GenerateToken(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(), UserID, Username);
+                    return new Response(Response.Split('-')[0], Tokens.GenerateToken(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(), UserID, Username));
                 }
                 else
                 {
-                    return Response;
+                    return null;
                 }
             }
             else
             {
-                return Response;
+                return null;
             }
         }
     }

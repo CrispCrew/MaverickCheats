@@ -15,8 +15,21 @@ namespace Main
 {
     public partial class Main : Form
     {
-        public Main()
+        /// <summary>
+        /// Connection to the Server
+        /// </summary>
+        public Client client;
+
+        /// <summary>
+        /// Authentication Token
+        /// </summary>
+        public Token token;
+
+        public Main(Client client, Token token)
         {
+            this.client = client;
+            this.token = token;
+
             InitializeComponent();
         }
 
@@ -37,80 +50,53 @@ namespace Main
                 bunifuTransition1.ShowSync(panel1);
             }
 
-            Client client = new Client();
-
-            Console.WriteLine(client.Version());
-
-            return;
-
-            /*
-            Request message = new Request("Products");
-
-            IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
-
-            NetworkStream strm = client.GetStream(); // the stream 
-            formatter.Serialize(strm, message); // the serialization process 
-
-            strm = client.GetStream();
-
-            Response r = (Response)formatter.Deserialize(strm); // you have to cast the deserialized object 
-
-            Console.WriteLine("Recieved: " + r.Message);
-
-            if (r.Message == "Products")
+            foreach (Product product in client.Products(token))
             {
-                foreach (Product product in (IList)r.Object)
-                {
-                    Console.WriteLine(product.Id + ", " + product.Name + "," + product.Image.LongLength);
+                Console.WriteLine(product.Id + ", " + product.Name + "," + product.Image.LongLength);
 
-                    BunifuFlatButton CheatListTab = new BunifuFlatButton();
-                    CheatListTab.Tag = product.Id;
+                BunifuFlatButton CheatListTab = new BunifuFlatButton();
+                CheatListTab.Tag = product.Id;
 
-                    System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
+                System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
 
-                    // 
-                    // bunifuFlatButton1
-                    // 
-                    CheatListTab.Activecolor = Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(204)))));
-                    CheatListTab.BackColor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
-                    CheatListTab.BackgroundImageLayout = ImageLayout.Stretch;
-                    CheatListTab.BorderRadius = 0;
-                    CheatListTab.Cursor = System.Windows.Forms.Cursors.Hand;
-                    bunifuTransition1.SetDecoration(CheatListTab, BunifuAnimatorNS.DecorationType.None);
-                    CheatListTab.DisabledColor = Color.Gray;
-                    CheatListTab.Iconcolor = Color.Transparent;
-                    CheatListTab.Iconimage = Image.FromStream(new MemoryStream(product.Image));
-                    CheatListTab.Iconimage_right = null;
-                    CheatListTab.Iconimage_right_Selected = null;
-                    CheatListTab.Iconimage_Selected = null;
-                    CheatListTab.IconMarginLeft = 0;
-                    CheatListTab.IconMarginRight = 0;
-                    CheatListTab.IconRightVisible = true;
-                    CheatListTab.IconRightZoom = 0D;
-                    CheatListTab.IconVisible = true;
-                    CheatListTab.IconZoom = 65;
-                    CheatListTab.IsTab = true;
-                    CheatListTab.Name = "button";
-                    CheatListTab.Normalcolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
-                    CheatListTab.OnHovercolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
-                    CheatListTab.OnHoverTextColor = Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(204)))));
-                    CheatListTab.Size = new Size(303, 48);
-                    CheatListTab.TabIndex = product.Id;
-                    CheatListTab.Text = "  " + product.Name;
-                    CheatListTab.TextAlign = ContentAlignment.MiddleLeft;
-                    CheatListTab.Textcolor = Color.Silver;
-                    CheatListTab.TextFont = new Font("Calibri", 11.25F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(0)));
-                    CheatListTab.Click += new EventHandler(CheatListTab_Click);
-                    CheatListTab.MouseEnter += new EventHandler(CheatListTabs_Hover);
-                    CheatListTab.MouseLeave += new EventHandler(CheatListTabs_Leave);
+                // 
+                // bunifuFlatButton1
+                // 
+                CheatListTab.Activecolor = Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(204)))));
+                CheatListTab.BackColor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
+                CheatListTab.BackgroundImageLayout = ImageLayout.Stretch;
+                CheatListTab.BorderRadius = 0;
+                CheatListTab.Cursor = System.Windows.Forms.Cursors.Hand;
+                bunifuTransition1.SetDecoration(CheatListTab, BunifuAnimatorNS.DecorationType.None);
+                CheatListTab.DisabledColor = Color.Gray;
+                CheatListTab.Iconcolor = Color.Transparent;
+                CheatListTab.Iconimage = Image.FromStream(new MemoryStream(product.Image));
+                CheatListTab.Iconimage_right = null;
+                CheatListTab.Iconimage_right_Selected = null;
+                CheatListTab.Iconimage_Selected = null;
+                CheatListTab.IconMarginLeft = 0;
+                CheatListTab.IconMarginRight = 0;
+                CheatListTab.IconRightVisible = true;
+                CheatListTab.IconRightZoom = 0D;
+                CheatListTab.IconVisible = true;
+                CheatListTab.IconZoom = 65;
+                CheatListTab.IsTab = true;
+                CheatListTab.Name = "button";
+                CheatListTab.Normalcolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
+                CheatListTab.OnHovercolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
+                CheatListTab.OnHoverTextColor = Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(204)))));
+                CheatListTab.Size = new Size(303, 48);
+                CheatListTab.TabIndex = product.Id;
+                CheatListTab.Text = "  " + product.Name;
+                CheatListTab.TextAlign = ContentAlignment.MiddleLeft;
+                CheatListTab.Textcolor = Color.Silver;
+                CheatListTab.TextFont = new Font("Calibri", 11.25F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(0)));
+                CheatListTab.Click += new EventHandler(CheatListTab_Click);
+                CheatListTab.MouseEnter += new EventHandler(CheatListTabs_Hover);
+                CheatListTab.MouseLeave += new EventHandler(CheatListTabs_Leave);
 
-                    flowLayoutPanel1.Controls.Add(CheatListTab);
-                }
+                flowLayoutPanel1.Controls.Add(CheatListTab);
             }
-
-            strm.Close();
-            client.Close();
-            */
         }
 
         #region Event Handlers - Front End

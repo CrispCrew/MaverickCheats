@@ -58,7 +58,6 @@ namespace MaverickServer.Database
                     if (reader.Read())
                     {
                         Debug.WriteLine("Reading Version");
-                        Debug.WriteLine("Reading Version");
 
                         Version = ((!reader.IsDBNull(0)) ? reader.GetString(0) : "0.00");
                     }
@@ -100,6 +99,9 @@ namespace MaverickServer.Database
         /// <returns></returns>
         public List<Product> QueryUserProducts(int ID)
         {
+            //Cache Products
+            Cache.Products = QueryProducts();
+
             List<Product> temp = new List<Product>();
 
             //If IsAdmin (Forum Permission Check?) , give all products
