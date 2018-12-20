@@ -27,7 +27,7 @@ namespace Main
 
             InitializeComponent();
 
-            if (Version == client.Version())
+            if (Version != client.Version())
             {
                 MessageBox.Show("Updating! - 'Updater.exe'");
 
