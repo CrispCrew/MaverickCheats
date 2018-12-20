@@ -28,12 +28,12 @@ namespace Main.HandleClient
                 }
                 else
                 {
-                    return null;
+                    return new Response(Response.Split('-')[0]);
                 }
             }
             else
             {
-                return null;
+                return new Response(Response);
             }
         }
     }

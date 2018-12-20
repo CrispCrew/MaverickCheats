@@ -1,4 +1,5 @@
 ﻿using Main.AuthLib;
+using NetworkTypes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -27,7 +28,7 @@ namespace Main
 
             InitializeComponent();
 
-            if (Version != client.Version())
+            if (Version == client.Version())
             {
                 MessageBox.Show("Updating! - 'Updater.exe'");
 
@@ -84,7 +85,17 @@ namespace Main
 
         private void Login_Load(object sender, EventArgs e)
         {
-            Console.WriteLine(client.Version());
+            
+        }
+
+        private void loginButton_Click(object sender, EventArgs e)
+        {
+            Token token = new Token();
+
+            if (client.Login(Username.Text, Password.Text, "", ref token))
+            {
+                Console.WriteLine(token.ID + "," + token.Username + "," + token.CreationDate.ToString() + "," + token.LastRequest.ToString());
+            }
         }
     }
 }

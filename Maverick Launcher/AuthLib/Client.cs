@@ -9,6 +9,7 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Main.AuthLib
 {
@@ -124,7 +125,7 @@ namespace Main.AuthLib
             return (MemoryStream)r.Object;
         }
 
-        public Token Login(string Username, string Password, string HWID)
+        public bool Login(string Username, string Password, string HWID, ref Token token)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -149,7 +150,12 @@ namespace Main.AuthLib
 
             Console.WriteLine("Recieved: " + r.Message);
 
-            return (Token)r.Object;
+            if (r.Message == "Login Found" && r.Object is Token)
+                token = (Token)r.Object;
+            else
+                return false;
+
+            return true;
         }
 
         public List<Product> Products(Token token)
