@@ -80,6 +80,7 @@
   <ItemGroup>
     <Compile Include="AuthLib\Client.cs" />
     <Compile Include="EmbeddedResource\EmbeddedResource.cs" />
+    <Compile Include="Functions\Encryption.cs" />
     <Compile Include="Login.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -124,7 +125,6 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
     <EmbeddedResource Include="Resources\Bunifu_UI_v1.52.dll" />
   </ItemGroup>

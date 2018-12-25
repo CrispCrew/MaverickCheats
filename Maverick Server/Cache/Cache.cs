@@ -33,5 +33,10 @@ namespace Main
         /// Notification Cache
         /// </summary>
         public static List<Notification> Notifications = new List<Notification>();
+
+        /// <summary>
+        /// OAuth Cache
+        /// </summary>
+        //public static List<OAuth> OAuth = new List<OAuth>();
     }
 }

@@ -105,7 +105,7 @@ namespace Main
         /// Maybe integrate with Support Tickets to auto create a ticket with the Log
         private void ShowLogsButton_Click(object sender, EventArgs e)
         {
-
+            //Create Window with Logs
         }
 
         #region Sliding Panel Events

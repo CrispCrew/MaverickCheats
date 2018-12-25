@@ -63,7 +63,25 @@ namespace NetworkTypes
             this.HWID = HWID;
         }
     }
+    /*
+    [Serializable]
+    public class OAuth
+    {
+        public string PrivateKey;
+        public string HWID;
 
+        public OAuth()
+        {
+
+        }
+
+        public OAuth(string PrivateKey, string HWID = "")
+        {
+            this.PrivateKey = PrivateKey;
+            this.HWID = HWID;
+        }
+    }
+    */
     [Serializable]
     public class Token
     {

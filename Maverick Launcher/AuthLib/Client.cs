@@ -158,6 +158,45 @@ namespace Main.AuthLib
             return true;
         }
 
+        /*
+        /// <summary>
+        /// Contacts server for Login Check
+        /// </summary>
+        /// <returns></returns>
+        public bool OAuth_Finish(string PrivateKey, ref Token token)
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            Console.WriteLine("Starting Request");
+
+            Request message = new Request("OAuth_Finish", new NetworkTypes.OAuth(PrivateKey, ""));
+
+            IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
+
+            NetworkStream strm = clientSocket.GetStream(); // the stream 
+
+            Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
+
+            formatter.Serialize(strm, message); // the serialization process 
+
+            Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+
+            Response r = (Response)formatter.Deserialize(strm); // you have to cast the deserialized object 
+
+            Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+
+            Console.WriteLine("Recieved: " + r.Message);
+
+            if (r.Message == "Login Found" && r.Object is Token)
+                token = (Token)r.Object;
+            else
+                return false;
+
+            return true;
+        }
+        */
+
         public List<Product> Products(Token token)
         {
             Stopwatch stopwatch = new Stopwatch();
@@ -186,6 +225,36 @@ namespace Main.AuthLib
             stopwatch.Stop();
 
             return (List<Product>)r.Object;
+        }
+
+        public MemoryStream Download(Product product)
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            Console.WriteLine("Starting Request");
+
+            Request message = new Request("Download", product);
+
+            IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
+
+            NetworkStream strm = clientSocket.GetStream(); // the stream 
+
+            Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
+
+            formatter.Serialize(strm, message); // the serialization process 
+
+            Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+
+            Response r = (Response)formatter.Deserialize(strm); // you have to cast the deserialized object 
+
+            Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+
+            Console.WriteLine("Recieved: " + r.Message);
+
+            stopwatch.Stop();
+
+            return (MemoryStream)r.Object;
         }
     }
 }
