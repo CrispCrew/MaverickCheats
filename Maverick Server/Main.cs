@@ -238,7 +238,7 @@ namespace Main
                     {
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
-                        Token token = (Token)r.Object;
+                        Token token = (Token)r.Token;
 
                         Console.WriteLine("Converted Token - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -262,7 +262,7 @@ namespace Main
                     {
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
-                        Token token = (Token)r.Object;
+                        Token token = (Token)r.Token;
 
                         Console.WriteLine("Converted Token - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -282,6 +282,50 @@ namespace Main
 
                         Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
                     }
+                    else if (r.Command == "Download")
+                    {
+                        Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        Token token = (Token)r.Token;
+                        Product product = (Product)r.Object;
+
+                        Console.WriteLine("Converted Token - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        Connect connect = new Connect();
+
+                        Console.WriteLine("Connected to Database - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        List<Product> products = connect.QueryUserProducts(token.ID);
+
+                        Console.WriteLine("Queried Database - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        connect.Close();
+
+                        Console.WriteLine("Closed Database Database - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        if (products.Any(product_search => product_search.Id == product.Id))
+                        {
+                            //Upload File
+                            Console.WriteLine("Reading File");
+
+                            MemoryStream stream = new MemoryStream();
+                            using (Stream source = File.OpenRead(Environment.CurrentDirectory + "\\Products\\" + product.File))
+                            {
+                                int bytesRead = 0;
+                                byte[] buffer = new byte[2048];
+                                while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
+                                    stream.Write(buffer, 0, bytesRead);
+                            }
+
+                            formatter.Serialize(strm, new Response("Download", stream));
+                        }
+                        else
+                        {
+                            formatter.Serialize(strm, new Response("Download", "Not Owned"));
+                        }
+
+                        Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
+                    }
                     else
                     {
                         formatter.Serialize(strm, new Response(r.Command, " is an Invalid Command"));
@@ -293,7 +337,6 @@ namespace Main
                     
                     break;
                 }
-
 
                 Sleep:
                 Thread.Sleep(100);

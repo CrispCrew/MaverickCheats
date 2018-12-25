@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.IO.Compression;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -24,6 +25,11 @@ namespace Main
         /// Authentication Token
         /// </summary>
         public Token token;
+
+        /// <summary>
+        /// List of Owned Products
+        /// </summary>
+        public List<Product> products;
 
         public Main(Client client, Token token)
         {
@@ -50,7 +56,9 @@ namespace Main
                 bunifuTransition1.ShowSync(panel1);
             }
 
-            foreach (Product product in client.Products(token))
+            products = client.Products(token);
+
+            foreach (Product product in products)
             {
                 Console.WriteLine(product.Id + ", " + product.Name + "," + product.Image.LongLength);
 
@@ -94,9 +102,19 @@ namespace Main
                 CheatListTab.Click += new EventHandler(CheatListTab_Click);
                 CheatListTab.MouseEnter += new EventHandler(CheatListTabs_Hover);
                 CheatListTab.MouseLeave += new EventHandler(CheatListTabs_Leave);
+                CheatListTab.MouseDoubleClick += new MouseEventHandler(CheatListTab_MouseDoubleClick);
 
                 flowLayoutPanel1.Controls.Add(CheatListTab);
             }
+        }
+
+        private void CheatListTab_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            int ProductID = (int)((BunifuFlatButton)sender).Tag;
+
+            ZipArchive archive = new ZipArchive(client.Download(token, products.Find(product => product.Id == ProductID)), ZipArchiveMode.Read);
+            archive.ExtractToDirectory(Environment.CurrentDirectory + "\\" + products.Find(product => product.Id == ProductID).Name + "\\");
+            archive.Dispose();
         }
 
         #region Event Handlers - Front End

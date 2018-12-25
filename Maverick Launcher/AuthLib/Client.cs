@@ -132,7 +132,7 @@ namespace Main.AuthLib
 
             Console.WriteLine("Starting Request");
 
-            Request message = new Request("Login", new NetworkTypes.Login(Username, Password, HWID));
+            Request message = new Request("Login", null, new NetworkTypes.Login(Username, Password, HWID));
 
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 
@@ -227,14 +227,14 @@ namespace Main.AuthLib
             return (List<Product>)r.Object;
         }
 
-        public MemoryStream Download(Product product)
+        public MemoryStream Download(Token token, Product product)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
             Console.WriteLine("Starting Request");
 
-            Request message = new Request("Download", product);
+            Request message = new Request("Download", token, product);
 
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 

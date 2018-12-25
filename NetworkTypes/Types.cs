@@ -12,6 +12,7 @@ namespace NetworkTypes
     public class Request
     {
         public string Command;
+        public Token Token = null;
         public object Object = 0;
 
         public Request()
@@ -19,9 +20,10 @@ namespace NetworkTypes
 
         }
 
-        public Request(string Command, object Object = null)
+        public Request(string Command, Token Token = null, object Object = null)
         {
             this.Command = Command;
+            this.Token = Token;
             this.Object = Object != null ? Object : 0;
         }
     }
