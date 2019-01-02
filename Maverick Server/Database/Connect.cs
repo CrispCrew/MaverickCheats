@@ -132,7 +132,7 @@ namespace MaverickServer.Database
                     //Not an INT - Ignore
                 }
 
-            return temp.OrderBy(id => id).ToList();
+            return temp.OrderBy(product => product.Id).ToList();
         }
 
         /// <summary>

@@ -89,18 +89,20 @@ namespace Main
                 if (Convert.ToBoolean(useAutoLogin) && !Convert.ToBoolean(forumLogin))
                 {
                     Token TempToken = new Token();
+                    string Error = "";
 
-                    if (client.Login(Username.Text, Password.Text, "", ref TempToken))
+                    if (client.Login(Username.Text, Password.Text, "", ref TempToken, ref Error))
                     {
                         token = TempToken;
 
-                        Console.WriteLine("Login Found-" + token);
+                        Console.WriteLine("Login Found-" + token.AuthToken);
 
                         new Main(client, token).ShowDialog(); //Shows Dialog on this Thread, Thread is held up and wont display Login Form
                     }
                     else
                     {
-                        //Error - Display Response
+                        this.failedLogin.Text = Error;
+                        this.failedLogin.Visible = true;
                     }
                 }
                 /*
@@ -210,8 +212,9 @@ namespace Main
         private void loginButton_Click(object sender, EventArgs e)
         {
             Token token = new Token();
+            string Error = "";
 
-            if (client.Login(Username.Text, Password.Text, "", ref token))
+            if (client.Login(Username.Text, Password.Text, "", ref token, ref Error))
             {
                 //Check if Either is Enabled or Disabled
                 if (File.Exists("autologin.data"))
@@ -262,6 +265,11 @@ namespace Main
                 new Main(client, token).Show();
 
                 Hide();
+            }
+            else
+            {
+                this.failedLogin.Text = Error;
+                this.failedLogin.Visible = true;
             }
         }
         #endregion

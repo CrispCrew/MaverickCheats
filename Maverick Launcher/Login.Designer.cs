@@ -46,6 +46,7 @@
             this.bunifuImageButton5 = new ns1.BunifuImageButton();
             this.bunifuImageButton3 = new ns1.BunifuImageButton();
             this.bunifuCustomLabel4 = new ns1.BunifuCustomLabel();
+            this.failedLogin = new ns1.BunifuCustomLabel();
             this.panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.bunifuImageButton4)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bunifuImageButton2)).BeginInit();
@@ -323,12 +324,26 @@
             this.bunifuCustomLabel4.Text = "MaverickCheats";
             this.bunifuCustomLabel4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
+            // failedLogin
+            // 
+            this.failedLogin.BackColor = System.Drawing.Color.Red;
+            this.failedLogin.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.failedLogin.ForeColor = System.Drawing.Color.White;
+            this.failedLogin.Location = new System.Drawing.Point(360, 406);
+            this.failedLogin.Name = "failedLogin";
+            this.failedLogin.Size = new System.Drawing.Size(384, 34);
+            this.failedLogin.TabIndex = 17;
+            this.failedLogin.Text = "Login Failed";
+            this.failedLogin.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.failedLogin.Visible = false;
+            // 
             // Login
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(70)))), ((int)(((byte)(73)))));
             this.ClientSize = new System.Drawing.Size(745, 440);
+            this.Controls.Add(this.failedLogin);
             this.Controls.Add(this.bunifuCustomLabel3);
             this.Controls.Add(this.autoLoginCheckBox);
             this.Controls.Add(this.bunifuCustomLabel2);
@@ -376,5 +391,6 @@
         private ns1.BunifuImageButton bunifuImageButton3;
         private ns1.BunifuCustomLabel bunifuCustomLabel4;
         private ns1.BunifuImageButton bunifuImageButton5;
+        private ns1.BunifuCustomLabel failedLogin;
     }
 }

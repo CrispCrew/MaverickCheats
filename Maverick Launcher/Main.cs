@@ -100,15 +100,15 @@ namespace Main
                 CheatListTab.Textcolor = Color.Silver;
                 CheatListTab.TextFont = new Font("Calibri", 11.25F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(0)));
                 CheatListTab.Click += new EventHandler(CheatListTab_Click);
+                CheatListTab.DoubleClick += new EventHandler(CheatListTab_MouseDoubleClick);
                 CheatListTab.MouseEnter += new EventHandler(CheatListTabs_Hover);
                 CheatListTab.MouseLeave += new EventHandler(CheatListTabs_Leave);
-                CheatListTab.MouseDoubleClick += new MouseEventHandler(CheatListTab_MouseDoubleClick);
 
                 flowLayoutPanel1.Controls.Add(CheatListTab);
             }
         }
 
-        private void CheatListTab_MouseDoubleClick(object sender, MouseEventArgs e)
+        private void CheatListTab_MouseDoubleClick(object sender, EventArgs e)
         {
             int ProductID = (int)((BunifuFlatButton)sender).Tag;
 

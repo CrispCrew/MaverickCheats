@@ -1,6 +1,7 @@
 ﻿using NetworkTypes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -78,15 +79,15 @@ namespace Main.AuthLib
 
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 
-            NetworkStream strm = clientSocket.GetStream(); // the stream 
+            serverStream = clientSocket.GetStream(); // the stream 
 
             Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            formatter.Serialize(strm, message); // the serialization process 
+            formatter.Serialize(serverStream, message); // the serialization process 
 
             Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Response r = (Response)formatter.Deserialize(strm); // you have to cast the deserialized object 
+            Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
             Console.WriteLine("Response Recieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -106,15 +107,15 @@ namespace Main.AuthLib
 
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 
-            NetworkStream strm = clientSocket.GetStream(); // the stream 
+            serverStream = clientSocket.GetStream(); // the stream 
 
             Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            formatter.Serialize(strm, message); // the serialization process 
+            formatter.Serialize(serverStream, message); // the serialization process 
 
             Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Response r = (Response)formatter.Deserialize(strm); // you have to cast the deserialized object 
+            Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
             Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -125,7 +126,7 @@ namespace Main.AuthLib
             return (MemoryStream)r.Object;
         }
 
-        public bool Login(string Username, string Password, string HWID, ref Token token)
+        public bool Login(string Username, string Password, string HWID, ref Token token, ref string Error)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -136,15 +137,15 @@ namespace Main.AuthLib
 
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 
-            NetworkStream strm = clientSocket.GetStream(); // the stream 
+            serverStream = clientSocket.GetStream(); // the stream 
 
             Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            formatter.Serialize(strm, message); // the serialization process 
+            formatter.Serialize(serverStream, message); // the serialization process 
 
             Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Response r = (Response)formatter.Deserialize(strm); // you have to cast the deserialized object 
+            Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
             Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -153,7 +154,11 @@ namespace Main.AuthLib
             if (r.Message == "Login Found" && r.Object is Token)
                 token = (Token)r.Object;
             else
+            {
+                Error = r.Message;
+
                 return false;
+            }
 
             return true;
         }
@@ -174,15 +179,15 @@ namespace Main.AuthLib
 
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 
-            NetworkStream strm = clientSocket.GetStream(); // the stream 
+            serverStream = clientSocket.GetStream(); // the stream 
 
             Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            formatter.Serialize(strm, message); // the serialization process 
+            formatter.Serialize(serverStream, message); // the serialization process 
 
             Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Response r = (Response)formatter.Deserialize(strm); // you have to cast the deserialized object 
+            Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
             Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -208,15 +213,15 @@ namespace Main.AuthLib
 
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 
-            NetworkStream strm = clientSocket.GetStream(); // the stream 
+            serverStream = clientSocket.GetStream(); // the stream 
 
             Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            formatter.Serialize(strm, message); // the serialization process 
+            formatter.Serialize(serverStream, message); // the serialization process 
 
             Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Response r = (Response)formatter.Deserialize(strm); // you have to cast the deserialized object 
+            Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
             Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -238,15 +243,15 @@ namespace Main.AuthLib
 
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 
-            NetworkStream strm = clientSocket.GetStream(); // the stream 
+            serverStream = clientSocket.GetStream(); // the stream 
 
             Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            formatter.Serialize(strm, message); // the serialization process 
+            formatter.Serialize(serverStream, message); // the serialization process 
 
             Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Response r = (Response)formatter.Deserialize(strm); // you have to cast the deserialized object 
+            Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
             Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 

@@ -14,7 +14,6 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Linq;
-using MaverickServer.HandleClients.Tokens;
 
 namespace Main
 {
@@ -37,42 +36,63 @@ namespace Main
             HttpListener listener = new HttpListener();
             listener.Prefixes.Add("http://*:8080/");
             listener.Start();
-        
+
             //New Ready
             while (true)
             {
                 try
                 {
+                    byte[] Bytes = new byte[] { };
+
                     HttpListenerContext context = listener.GetContext();
 
-                    string API = context.Request.Url.Query;
+                    Functions.Request request = new Functions.Request(context.Request.Url.Query);
 
-                    string Response = "";
-
-                    foreach (Product product in Cache.Products)
+                    if (request.Contains("Request"))
                     {
-                        Response += product.Id + "," + product.Name + "," + Cache.AuthTokens.FindAll(token => token.LastDevice == product.Name).Count + ";";
+                        if (request.Get("Request") == "Authenticate")
+                        {
+                            if (request.Contains("Token"))
+                            {
+                                if (Cache.AuthTokens.Any(token => token.AuthToken == request.Get("Token") && token.IP == context.Request.RemoteEndPoint.Address.ToString()))
+                                {
+                                    Bytes = Encoding.UTF8.GetBytes("Authenticated");
+                                }
+                                else
+                                {
+                                    Bytes = Encoding.UTF8.GetBytes("Not Authenticated - " + request.Get("Token") + "," + context.Request.RemoteEndPoint.Address.ToString());
+                                }
+                            }
+                            else
+                            {
+                                Bytes = Encoding.UTF8.GetBytes("No Token Provided - " + request.Get("Token"));
+                            }
+                        }
+                        else
+                        {
+                            Bytes = Encoding.UTF8.GetBytes("Invalid Request - " + request.Data);
+                        }
+                    }
+                    else
+                    {
+                        Bytes = Encoding.UTF8.GetBytes("No Request Provided - " + request.Data);
                     }
 
-                    Response += "%split%" + Cache.AuthTokens.Count;
-
-                    byte[] bytes = Encoding.UTF8.GetBytes(Response);
-
+                    //
                     context.Response.ContentType = "text/plain";
-                    context.Response.ContentLength64 = bytes.Length;
+                    context.Response.ContentLength64 = Bytes.Length;
                     context.Response.AddHeader("Date", DateTime.Now.ToString("r"));
 
-                    context.Response.OutputStream.Write(bytes, 0, bytes.Length);
+                    context.Response.OutputStream.Write(Bytes, 0, Bytes.Length);
 
                     context.Response.StatusCode = (int)HttpStatusCode.OK;
                     context.Response.OutputStream.Flush();
                 }
                 catch (Exception ex)
                 {
-
+                    Console.WriteLine(ex.ToString());
                 }
             }
-
         }
 
         public void TCPServer()
