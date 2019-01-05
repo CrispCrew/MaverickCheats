@@ -156,7 +156,7 @@ namespace Main
             {
                 MessageBox.Show("Updating! - 'Updater.exe'");
 
-            retry:
+                retry:
                 //Kill Process's
                 foreach (Process process in new List<Process>(Process.GetProcesses().Where(process => process.ProcessName.ToLower() == "updater" || process.ProcessName.ToLower() == "run")))
                     try { process.CloseMainWindow(); process.Close(); process.Kill(); } catch { }
@@ -211,6 +211,8 @@ namespace Main
         #region Login Button Events
         private void loginButton_Click(object sender, EventArgs e)
         {
+            pictureBox1.Image = Image.FromStream(new MemoryStream(EmbeddedResource.EmbeddedResources.First(resource => resource.Key == "Spinner.gif").Value));
+
             Token token = new Token();
             string Error = "";
 
@@ -271,6 +273,8 @@ namespace Main
                 this.failedLogin.Text = Error;
                 this.failedLogin.Visible = true;
             }
+
+            //pictureBox1.Image = null;
         }
         #endregion
 
@@ -330,6 +334,7 @@ namespace Main
             }
         }
         #endregion
+
         #endregion
     }
 }

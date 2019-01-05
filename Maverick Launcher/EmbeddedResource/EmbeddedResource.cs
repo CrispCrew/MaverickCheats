@@ -26,7 +26,7 @@ public class EmbeddedResource
             // Get byte[] from the file from embedded resource
             ba = new byte[(int)stm.Length];
             stm.Read(ba, 0, (int)stm.Length);
-            
+
             // Add the assembly/dll into dictionary
             EmbeddedResources.Add(fileName, ba);
         }

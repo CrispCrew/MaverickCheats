@@ -128,5 +128,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\Bunifu_UI_v1.52.dll" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Spinner.gif" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

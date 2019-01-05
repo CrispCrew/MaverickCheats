@@ -1,7 +1,9 @@
 ﻿using Main;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -15,6 +17,20 @@ namespace Main
         [STAThread]
         static void Main()
         {
+            //Get embedded Theme.dll if it isnt on the Disk
+            EmbeddedResource.LoadAssembly("Main.Resources.Bunifu_UI_v1.52.dll", "Bunifu_UI_v1.52.dll");
+
+            //Get embedded Theme.dll if it isnt on the Disk
+            EmbeddedResource.LoadResource("Main.Resources.Spinner.gif", "Spinner.gif");
+
+            //Set Debug Log to English
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
+            //Listener Events for Assembly Resolve and Unhandled Exceptions
+            //AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+            //AppDomain.CurrentDomain.UnhandledException += (sender, arg) => HandleUnhandledException(arg.ExceptionObject as Exception);
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Login());

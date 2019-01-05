@@ -12,7 +12,7 @@ namespace Main.Functions
 
         public Request(string Data)
         {
-            this.Data = Data.Substring(1, Data.Length - 1);
+            this.Data = Data.Substring(1);
         }
 
         public bool Contains(string Variable)

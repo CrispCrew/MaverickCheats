@@ -40,12 +40,12 @@ namespace Main
             //New Ready
             while (true)
             {
+                byte[] Bytes = new byte[] { };
+
+                HttpListenerContext context = listener.GetContext();
+
                 try
                 {
-                    byte[] Bytes = new byte[] { };
-
-                    HttpListenerContext context = listener.GetContext();
-
                     Functions.Request request = new Functions.Request(context.Request.Url.Query);
 
                     if (request.Contains("Request"))
@@ -67,6 +67,28 @@ namespace Main
                             {
                                 Bytes = Encoding.UTF8.GetBytes("No Token Provided - " + request.Get("Token"));
                             }
+                        }
+                        else if (request.Get("Request") == "Products")
+                        {
+                            string Output = "";
+
+                            foreach (Product product in Cache.Products)
+                            {
+                                Output += (product.Id == 1 ? "" + product.Id : "%split%" + product.Id) + "%delimiter%" + product.Name + "%delimiter%" + product.File + "%delimiter%" + product.ProcessName + "%delimiter%" + product.Status + "%delimiter%" + product.Version + "%delimiter%" + product.Free + "%delimiter%" + product.AutoLaunchMem + "%delimiter%" + product.Internal;
+                            }
+
+                            Bytes = Encoding.UTF8.GetBytes(Output);
+                        }
+                        else if (request.Get("Request") == "OnlineCounts")
+                        {
+                            string Output = "";
+
+                            foreach (Product product in Cache.Products)
+                            {
+                                Output += (product.Id == 1 ? "" + product.Name : "%split%" + product.Name) + "%delimiter%" + Cache.AuthTokens.Count(token => token.LastDevice == product.Name).ToString();
+                            }
+
+                            Bytes = Encoding.UTF8.GetBytes(Output);
                         }
                         else
                         {
@@ -91,6 +113,18 @@ namespace Main
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.ToString());
+
+                    Bytes = Encoding.UTF8.GetBytes(ex.ToString());
+
+                    //output Error
+                    context.Response.ContentType = "text/plain";
+                    context.Response.ContentLength64 = Bytes.Length;
+                    context.Response.AddHeader("Date", DateTime.Now.ToString("r"));
+
+                    context.Response.OutputStream.Write(Bytes, 0, Bytes.Length);
+
+                    context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    context.Response.OutputStream.Flush();
                 }
             }
         }

@@ -12,6 +12,7 @@ namespace NetworkTypes
     public class Request
     {
         public string Command;
+        public string SubCommand;
         public Token Token = null;
         public object Object = 0;
 
@@ -23,6 +24,15 @@ namespace NetworkTypes
         public Request(string Command, Token Token = null, object Object = null)
         {
             this.Command = Command;
+            this.SubCommand = "";
+            this.Token = Token;
+            this.Object = Object != null ? Object : 0;
+        }
+
+        public Request(string Command, string SubCommand, Token Token = null, object Object = null)
+        {
+            this.Command = Command;
+            this.SubCommand = SubCommand;
             this.Token = Token;
             this.Object = Object != null ? Object : 0;
         }
@@ -116,7 +126,7 @@ namespace NetworkTypes
             this.ID = ID;
             this.Username = Username;
             this.AuthToken = AuthToken;
-            this.LastDevice = LastDevice;
+            this.LastDevice = LastDevice == null ? "" : LastDevice;
             this.LastRequest = DateTime.Now;
             this.CreationDate = DateTime.Now;
         }
