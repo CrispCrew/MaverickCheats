@@ -1,4 +1,5 @@
 ﻿using Main.AuthLib;
+using Main.Theme;
 using NetworkTypes;
 using ns1;
 using System;
@@ -7,9 +8,11 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace Main
@@ -37,84 +40,83 @@ namespace Main
             this.token = token;
 
             InitializeComponent();
+
+            pictureBox1.Image = Image.FromStream(new MemoryStream(EmbeddedResource.EmbeddedResources.First(resource => resource.Key == "Spinner.gif").Value));
         }
 
         private void Main_Load(object sender, EventArgs e)
         {
-            if (panel1.Width == 50)
+            new Thread(() =>
             {
-                panel1.Visible = false;
-                panel1.Width = 260;
+                this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = true; });
 
-                bunifuTransition1.ShowSync(panel1);
-            }
-            else
-            {
-                panel1.Visible = false;
-                panel1.Width = 50;
+                if (panel1.Width == 50)
+                {
+                    panel1.Visible = false;
+                    panel1.Width = 260;
 
-                bunifuTransition1.ShowSync(panel1);
-            }
+                    bunifuTransition1.ShowSync(panel1);
+                }
+                else
+                {
+                    panel1.Visible = false;
+                    panel1.Width = 50;
 
-            products = client.Products(token);
+                    bunifuTransition1.ShowSync(panel1);
+                }
 
-            foreach (Product product in products)
-            {
-                Console.WriteLine(product.Id + ", " + product.Name + "," + product.Image.LongLength);
+                products = client.Products(token);
 
-                BunifuFlatButton CheatListTab = new BunifuFlatButton();
-                CheatListTab.Tag = product.Id;
+                foreach (Product product in products)
+                {
+                    Console.WriteLine(product.Id + ", " + product.Name + "," + product.Image.LongLength);
 
-                System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
+                    BunifuFlatButton CheatListTab = new BunifuFlatButton();
+                    CheatListTab.Tag = product.Id;
 
-                // 
-                // bunifuFlatButton1
-                // 
-                CheatListTab.Activecolor = Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(204)))));
-                CheatListTab.BackColor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
-                CheatListTab.BackgroundImageLayout = ImageLayout.Stretch;
-                CheatListTab.BorderRadius = 0;
-                CheatListTab.Cursor = System.Windows.Forms.Cursors.Hand;
-                bunifuTransition1.SetDecoration(CheatListTab, BunifuAnimatorNS.DecorationType.None);
-                CheatListTab.DisabledColor = Color.Gray;
-                CheatListTab.Iconcolor = Color.Transparent;
-                CheatListTab.Iconimage = Image.FromStream(new MemoryStream(product.Image));
-                CheatListTab.Iconimage_right = null;
-                CheatListTab.Iconimage_right_Selected = null;
-                CheatListTab.Iconimage_Selected = null;
-                CheatListTab.IconMarginLeft = 0;
-                CheatListTab.IconMarginRight = 0;
-                CheatListTab.IconRightVisible = true;
-                CheatListTab.IconRightZoom = 0D;
-                CheatListTab.IconVisible = true;
-                CheatListTab.IconZoom = 65;
-                CheatListTab.IsTab = true;
-                CheatListTab.Name = "button";
-                CheatListTab.Normalcolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
-                CheatListTab.OnHovercolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
-                CheatListTab.OnHoverTextColor = Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(204)))));
-                CheatListTab.Size = new Size(303, 48);
-                CheatListTab.TabIndex = product.Id;
-                CheatListTab.Text = "  " + product.Name;
-                CheatListTab.TextAlign = ContentAlignment.MiddleLeft;
-                CheatListTab.Textcolor = Color.Silver;
-                CheatListTab.TextFont = new Font("Calibri", 11.25F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(0)));
-                CheatListTab.Click += new EventHandler(CheatListTab_Click);
-                CheatListTab.DoubleClick += new EventHandler(CheatListTab_MouseDoubleClick);
-                CheatListTab.MouseEnter += new EventHandler(CheatListTabs_Hover);
-                CheatListTab.MouseLeave += new EventHandler(CheatListTabs_Leave);
+                    System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
 
-                flowLayoutPanel1.Controls.Add(CheatListTab);
-            }
-        }
+                    // 
+                    // bunifuFlatButton1
+                    // 
+                    CheatListTab.Activecolor = Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(204)))));
+                    CheatListTab.BackColor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
+                    CheatListTab.BackgroundImageLayout = ImageLayout.Stretch;
+                    CheatListTab.BorderRadius = 0;
+                    CheatListTab.Cursor = System.Windows.Forms.Cursors.Hand;
+                    bunifuTransition1.SetDecoration(CheatListTab, BunifuAnimatorNS.DecorationType.None);
+                    CheatListTab.DisabledColor = Color.Gray;
+                    CheatListTab.Iconcolor = Color.Transparent;
+                    CheatListTab.Iconimage = Image.FromStream(new MemoryStream(product.Image));
+                    CheatListTab.Iconimage_right = null;
+                    CheatListTab.Iconimage_right_Selected = null;
+                    CheatListTab.Iconimage_Selected = null;
+                    CheatListTab.IconMarginLeft = 0;
+                    CheatListTab.IconMarginRight = 0;
+                    CheatListTab.IconRightVisible = true;
+                    CheatListTab.IconRightZoom = 0D;
+                    CheatListTab.IconVisible = true;
+                    CheatListTab.IconZoom = 65;
+                    CheatListTab.IsTab = true;
+                    CheatListTab.Name = "button";
+                    CheatListTab.Normalcolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
+                    CheatListTab.OnHovercolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
+                    CheatListTab.OnHoverTextColor = Color.White;
+                    CheatListTab.Size = new Size(303, 48);
+                    CheatListTab.TabIndex = product.Id;
+                    CheatListTab.Text = "  " + product.Name;
+                    CheatListTab.TextAlign = ContentAlignment.MiddleLeft;
+                    CheatListTab.Textcolor = Color.Silver;
+                    CheatListTab.TextFont = new Font("Calibri", 11.25F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(0)));
+                    CheatListTab.MouseDown += new EventHandler(CheatListTab_MouseDown);
+                    CheatListTab.MouseEnter += new EventHandler(CheatListTabs_Hover);
+                    CheatListTab.MouseLeave += new EventHandler(CheatListTabs_Leave);
 
-        private void CheatListTab_MouseDoubleClick(object sender, EventArgs e)
-        {
-            int ProductID = (int)((BunifuFlatButton)sender).Tag;
+                    this.BeginInvoke((MethodInvoker)delegate { flowLayoutPanel1.Controls.Add(CheatListTab); });
+                }
 
-            ZipArchive archive = new ZipArchive(client.Download(token, products.Find(product => product.Id == ProductID)), ZipArchiveMode.Read);
-            archive.ExtractToDirectory(Environment.CurrentDirectory + "\\" + products.Find(product => product.Id == ProductID).Name + "\\");
-            archive.Dispose();
+                this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = false; });
+            }).Start();
         }
 
         #region Event Handlers - Front End
@@ -147,14 +149,29 @@ namespace Main
         #endregion
 
         #region CheatList Events
-        //Check if other tabs are clicked, deselect them if they are
-        private void CheatListTab_Click(object sender, EventArgs e)
+        private void CheatListTab_MouseDown(object sender, EventArgs e)
         {
             BunifuFlatButton button = ((BunifuFlatButton)sender);
 
             foreach (BunifuFlatButton control in flowLayoutPanel1.Controls)
                 if (control.selected && button != control)
                     control.selected = false;
+
+            if (((MouseEventArgs)e).Clicks < 2)
+                return;
+
+            new Thread(() =>
+            {
+                this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = true; });
+
+                int ProductID = (int)((BunifuFlatButton)sender).Tag;
+
+                ZipArchive archive = new ZipArchive(client.Download(token, products.Find(product => product.Id == ProductID)), ZipArchiveMode.Read);
+                archive.ExtractToDirectory(Environment.CurrentDirectory + "\\" + products.Find(product => product.Id == ProductID).Name + "\\");
+                archive.Dispose();
+
+                this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = false; });
+            }).Start();
         }
 
         private void CheatListTabs_Hover(object sender, EventArgs e)
@@ -167,6 +184,7 @@ namespace Main
             ((BunifuFlatButton)sender).IconZoom = ((BunifuFlatButton)sender).IconZoom - 10;
         }
         #endregion
+
         #endregion
     }
 }

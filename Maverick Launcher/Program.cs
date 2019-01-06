@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -28,12 +29,17 @@ namespace Main
             Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
 
             //Listener Events for Assembly Resolve and Unhandled Exceptions
-            //AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
             //AppDomain.CurrentDomain.UnhandledException += (sender, arg) => HandleUnhandledException(arg.ExceptionObject as Exception);
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Login());
+        }
+
+        public static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            return EmbeddedResource.Get(args.Name);
         }
     }
 }

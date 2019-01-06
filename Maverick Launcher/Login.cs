@@ -27,6 +27,8 @@ namespace Main
         {
             InitializeComponent();
 
+            pictureBox1.Image = Image.FromStream(new MemoryStream(EmbeddedResource.EmbeddedResources.First(resource => resource.Key == "Spinner.gif").Value));
+
             Console.WriteLine("Form Loaded");
 
             //Auto Login?????
@@ -152,106 +154,83 @@ namespace Main
         #region Login Load()
         private void Login_Load(object sender, EventArgs e)
         {
-            if (Version != client.Version())
+            new Thread(() =>
             {
-                MessageBox.Show("Updating! - 'Updater.exe'");
+                this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = true; });
 
-                retry:
-                //Kill Process's
-                foreach (Process process in new List<Process>(Process.GetProcesses().Where(process => process.ProcessName.ToLower() == "updater" || process.ProcessName.ToLower() == "run")))
-                    try { process.CloseMainWindow(); process.Close(); process.Kill(); } catch { }
-
-                //Starting Updates
-                Console.WriteLine("Starting Update Protocol");
-
-                //Extract the Update and only get the Updater.exe
-                using (ZipArchive archive = new ZipArchive(client.Update(), ZipArchiveMode.Read))
+                if (Version != client.Version())
                 {
-                    foreach (ZipArchiveEntry file in archive.Entries)
+                    MessageBox.Show("Updating! - 'Updater.exe'");
+
+                    retry:
+                    //Kill Process's
+                    foreach (Process process in new List<Process>(Process.GetProcesses().Where(process => process.ProcessName.ToLower() == "updater" || process.ProcessName.ToLower() == "run")))
+                        try { process.CloseMainWindow(); process.Close(); process.Kill(); } catch { }
+
+                    //Starting Updates
+                    Console.WriteLine("Starting Update Protocol");
+
+                    //Extract the Update and only get the Updater.exe
+                    using (ZipArchive archive = new ZipArchive(client.Update(), ZipArchiveMode.Read))
                     {
-                        if (File.Exists(Environment.CurrentDirectory + "\\" + file.Name))
-                            try { File.Delete(Environment.CurrentDirectory + "\\" + file.Name); } catch (Exception ex) { Console.WriteLine("Failed to Delete the File: " + file.FullName + "\nERROR:\n" + ex.ToString()); continue; }
+                        foreach (ZipArchiveEntry file in archive.Entries)
+                        {
+                            if (File.Exists(Environment.CurrentDirectory + "\\" + file.Name))
+                                try { File.Delete(Environment.CurrentDirectory + "\\" + file.Name); } catch (Exception ex) { Console.WriteLine("Failed to Delete the File: " + file.FullName + "\nERROR:\n" + ex.ToString()); continue; }
 
-                        file.ExtractToFile(Environment.CurrentDirectory + "\\" + file.Name);
+                            file.ExtractToFile(Environment.CurrentDirectory + "\\" + file.Name);
 
-                        Console.WriteLine("Extracting File: " + file.Name);
+                            Console.WriteLine("Extracting File: " + file.Name);
+                        }
                     }
-                }
 
-                if (File.Exists(Environment.CurrentDirectory + "\\Updater.exe"))
-                {
-                    Console.WriteLine("Updater Executable Found!");
-
-                    Process process = new Process();
-                    ProcessStartInfo startInfo = new ProcessStartInfo()
+                    if (File.Exists(Environment.CurrentDirectory + "\\Updater.exe"))
                     {
-                        WorkingDirectory = Environment.CurrentDirectory + "\\",
-                        //UseShellExecute = false,
-                        FileName = Environment.CurrentDirectory + "\\" + "Updater.exe",
-                        //WindowStyle = ProcessWindowStyle.Hidden,
-                        //CreateNoWindow = true,
-                        UseShellExecute = true,
-                        Verb = "runas"
-                    };
-                    process.StartInfo = startInfo;
-                    process.Start();
-                }
-                else
-                {
-                    Console.WriteLine("AutoUpdater Executable Missing! -> Recovery: Trying to download AutoUpdater");
+                        Console.WriteLine("Updater Executable Found!");
 
-                    goto retry;
+                        Process process = new Process();
+                        ProcessStartInfo startInfo = new ProcessStartInfo()
+                        {
+                            WorkingDirectory = Environment.CurrentDirectory + "\\",
+                            //UseShellExecute = false,
+                            FileName = Environment.CurrentDirectory + "\\" + "Updater.exe",
+                            //WindowStyle = ProcessWindowStyle.Hidden,
+                            //CreateNoWindow = true,
+                            UseShellExecute = true,
+                            Verb = "runas"
+                        };
+                        process.StartInfo = startInfo;
+                        process.Start();
+                    }
+                    else
+                    {
+                        Console.WriteLine("AutoUpdater Executable Missing! -> Recovery: Trying to download AutoUpdater");
+
+                        goto retry;
+                    }
+
+                    Environment.Exit(0);
                 }
 
-                Environment.Exit(0);
-            }
+                this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = false; });
+            }).Start();
         }
         #endregion
 
         #region Login Button Events
         private void loginButton_Click(object sender, EventArgs e)
         {
-            pictureBox1.Image = Image.FromStream(new MemoryStream(EmbeddedResource.EmbeddedResources.First(resource => resource.Key == "Spinner.gif").Value));
-
-            Token token = new Token();
-            string Error = "";
-
-            if (client.Login(Username.Text, Password.Text, "", ref token, ref Error))
+            new Thread(() =>
             {
-                //Check if Either is Enabled or Disabled
-                if (File.Exists("autologin.data"))
-                    try
-                    {
-                        File.Delete("autologin.data");
-                    }
-                    catch
-                    {
-                        MessageBox.Show("Auto Login File cannot be removed");
-                    }
+                this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = true; });
 
-                #region AutoLogin
-                if (autoLoginCheckBox.Checked)
+                Token token = new Token();
+                string Error = "";
+
+                if (client.Login(Username.Text, Password.Text, "", ref token, ref Error))
                 {
-                    StreamWriter sw = new StreamWriter("autologin.data");
-                    sw.WriteLine("True");
-                    sw.WriteLine("False");
-                    sw.WriteLine(Encryption.crypt(Username.Text));
-                    sw.WriteLine(Encryption.crypt(Password.Text));
-                    sw.Close();
-                }
-                else if (rememberMeCheckBox.Checked)
-                {
-                    StreamWriter sw = new StreamWriter("autologin.data");
-                    sw.WriteLine("False");
-                    sw.WriteLine("False");
-                    sw.WriteLine(Encryption.crypt(Username.Text));
-                    sw.WriteLine(Encryption.crypt(Password.Text));
-                    sw.Close();
-                }
-                else
-                {
+                    //Check if Either is Enabled or Disabled
                     if (File.Exists("autologin.data"))
-                    {
                         try
                         {
                             File.Delete("autologin.data");
@@ -260,21 +239,55 @@ namespace Main
                         {
                             MessageBox.Show("Auto Login File cannot be removed");
                         }
+
+                    #region AutoLogin
+                    if (autoLoginCheckBox.Checked)
+                    {
+                        StreamWriter sw = new StreamWriter("autologin.data");
+                        sw.WriteLine("True");
+                        sw.WriteLine("False");
+                        sw.WriteLine(Encryption.crypt(Username.Text));
+                        sw.WriteLine(Encryption.crypt(Password.Text));
+                        sw.Close();
                     }
+                    else if (rememberMeCheckBox.Checked)
+                    {
+                        StreamWriter sw = new StreamWriter("autologin.data");
+                        sw.WriteLine("False");
+                        sw.WriteLine("False");
+                        sw.WriteLine(Encryption.crypt(Username.Text));
+                        sw.WriteLine(Encryption.crypt(Password.Text));
+                        sw.Close();
+                    }
+                    else
+                    {
+                        if (File.Exists("autologin.data"))
+                        {
+                            try
+                            {
+                                File.Delete("autologin.data");
+                            }
+                            catch
+                            {
+                                MessageBox.Show("Auto Login File cannot be removed");
+                            }
+                        }
+                    }
+                    #endregion
+
+                    this.BeginInvoke((MethodInvoker)delegate { new Main(client, token).Show(); });
+
+                    this.BeginInvoke((MethodInvoker)delegate { Hide(); });
                 }
-                #endregion
+                else
+                {
+                    this.BeginInvoke((MethodInvoker)delegate { failedLogin.Text = Error; });
+                    this.BeginInvoke((MethodInvoker)delegate { failedLogin.Visible = true; });
 
-                new Main(client, token).Show();
+                }
 
-                Hide();
-            }
-            else
-            {
-                this.failedLogin.Text = Error;
-                this.failedLogin.Visible = true;
-            }
-
-            //pictureBox1.Image = null;
+                this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = false; });
+            }).Start();
         }
         #endregion
 

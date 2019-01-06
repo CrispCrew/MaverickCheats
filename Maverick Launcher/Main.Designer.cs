@@ -36,6 +36,7 @@
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.slidingPanel = new ns1.BunifuImageButton();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.ShowLogsButton = new ns1.BunifuImageButton();
             this.bunifuCustomLabel1 = new ns1.BunifuCustomLabel();
             this.bunifuTransition1 = new BunifuAnimatorNS.BunifuTransition(this.components);
@@ -43,6 +44,7 @@
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.slidingPanel)).BeginInit();
             this.panel2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ShowLogsButton)).BeginInit();
             this.SuspendLayout();
             // 
@@ -95,6 +97,7 @@
             // panel2
             // 
             this.panel2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(204)))));
+            this.panel2.Controls.Add(this.pictureBox1);
             this.panel2.Controls.Add(this.ShowLogsButton);
             this.panel2.Controls.Add(this.bunifuCustomLabel1);
             this.bunifuTransition1.SetDecoration(this.panel2, BunifuAnimatorNS.DecorationType.None);
@@ -103,6 +106,16 @@
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(957, 40);
             this.panel2.TabIndex = 1;
+            // 
+            // pictureBox1
+            // 
+            this.bunifuTransition1.SetDecoration(this.pictureBox1, BunifuAnimatorNS.DecorationType.None);
+            this.pictureBox1.Location = new System.Drawing.Point(917, 0);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(40, 40);
+            this.pictureBox1.TabIndex = 19;
+            this.pictureBox1.TabStop = false;
+            this.pictureBox1.Visible = false;
             // 
             // ShowLogsButton
             // 
@@ -181,6 +194,7 @@
             this.panel1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.slidingPanel)).EndInit();
             this.panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ShowLogsButton)).EndInit();
             this.ResumeLayout(false);
 
@@ -197,6 +211,7 @@
         private ns1.BunifuImageButton ShowLogsButton;
         private ns1.BunifuDragControl bunifuDragControl1;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
+        private System.Windows.Forms.PictureBox pictureBox1;
     }
 }
 

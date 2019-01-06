@@ -59,6 +59,7 @@
     <Reference Include="Bunifu_UI_v1.52, Version=1.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Resources\Themes\Bunifu_UI_v1.52.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="NetworkTypes">
       <HintPath>..\NetworkTypes\bin\Debug\NetworkTypes.dll</HintPath>
