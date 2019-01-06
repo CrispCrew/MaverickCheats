@@ -94,8 +94,24 @@ namespace Main
                                                 Bytes = Encoding.UTF8.GetBytes("Login Found");
                                             }
                                         }
+                                        else
+                                        {
+                                            Console.WriteLine("Missing Argument - UserID");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Missing Argument - UserID");
                                     }
                                 }
+                                else
+                                {
+                                    Console.WriteLine("Missing Argument - UserID");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Missing Argument - UserID");
                             }
                         }
                         else if (request.Get("Request") == "Products")
@@ -277,7 +293,7 @@ namespace Main
 
                         Console.WriteLine("Sent Response - " + stopwatch.Elapsed.TotalMilliseconds);
                     }
-                    else if (r.Command == "OAuth_Finish")
+                    else if (r.Command == "OAuth")
                     {
                         Response response = new Response();
 
@@ -289,9 +305,9 @@ namespace Main
 
                         lock (Cache.OAuths)
                         {
-                            if (Cache.OAuths.Any(oauth => oauth.PrivateKey == login.PrivateKey && oauth.HWID == login.HWID))
+                            if (Cache.OAuths.Any(oauth => oauth.PrivateKey == login.PrivateKey))
                             {
-                                OAuth OAuths = Cache.OAuths.Find(oauth => oauth.PrivateKey == login.PrivateKey && oauth.HWID == login.HWID);
+                                OAuth OAuths = Cache.OAuths.Find(oauth => oauth.PrivateKey == login.PrivateKey);
 
                                 if (OAuths != null)
                                 {

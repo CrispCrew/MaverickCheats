@@ -24,7 +24,14 @@ namespace NetworkTypes
 
         }
 
-        public Request(string Command, Token Token = null, object Object = null)
+        public Request(string Command, object Object = null)
+        {
+            this.Command = Command;
+            this.SubCommand = "";
+            this.Object = Object != null ? Object : 0;
+        }
+
+        public Request(string Command, Token Token, object Object = null)
         {
             this.Command = Command;
             this.SubCommand = "";

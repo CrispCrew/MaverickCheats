@@ -353,6 +353,69 @@ namespace Main
         private void loginForum_Click(object sender, EventArgs e)
         {
             //AutoLogin with Forum
+            new Thread(() =>
+            {
+                this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = true; });
+
+                Console.WriteLine("Attempting to AutoLogin with OAuth");
+
+                string PrivateKey = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("+", "").Replace("=", "").Replace(@"/", "");
+
+                Process process = Process.Start("https://maverickcheats.eu/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + ""); //FingerPrint.Value()
+
+                for (int i = 0; i < 10; i++)
+                {
+                    if (client.OAuth_Finish(PrivateKey, ref token))
+                    {
+                        Console.WriteLine("Login Found-" + token.AuthToken);
+
+                        //Check if Either is Enabled or Disabled
+                        if (File.Exists("autologin.data"))
+                            try
+                            {
+                                File.Delete("autologin.data");
+                            }
+                            catch
+                            {
+                                MessageBox.Show("Configuration File cannot be removed");
+                            }
+                        /*
+                        #region AutoLogin
+                        if (AutoLogin.Checked)
+                        {
+                            StreamWriter sw = new StreamWriter("autologin.data");
+                            sw.WriteLine("True");
+                            sw.WriteLine("True");
+                            sw.WriteLine("");
+                            sw.WriteLine("");
+                            sw.Close();
+                        }
+                        else
+                        {
+                            if (File.Exists("autologin.data"))
+                            {
+                                try
+                                {
+                                    File.Delete("autologin.data");
+                                }
+                                catch
+                                {
+                                    MessageBox.Show("Configuration File cannot be removed");
+                                }
+                            }
+                        }
+                        #endregion
+                        */
+
+                        new Thread(() => new Main(client, token).ShowDialog()).Start();
+
+                        break;
+                    }
+
+                    Thread.Sleep(2500);
+                }
+            }
+            ).Start();
         }
 
         private void loginForum_MouseEnter(object sender, EventArgs e)

@@ -20,7 +20,7 @@ namespace Main
             this.UserID = UserID;
             this.Username = Username;
             this.PrivateKey = PrivateKey;
-            this.PrivateKey = HWID;
+            this.HWID = HWID;
 
             this.CreationDate = DateTime.UtcNow;
         }

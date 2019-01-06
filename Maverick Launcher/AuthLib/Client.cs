@@ -163,7 +163,6 @@ namespace Main.AuthLib
             return true;
         }
 
-        /*
         /// <summary>
         /// Contacts server for Login Check
         /// </summary>
@@ -175,7 +174,7 @@ namespace Main.AuthLib
 
             Console.WriteLine("Starting Request");
 
-            Request message = new Request("OAuth_Finish", new NetworkTypes.OAuth(PrivateKey, ""));
+            Request message = new Request("OAuth", new NetworkTypes.OAuth(PrivateKey, ""));
 
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 
@@ -200,7 +199,6 @@ namespace Main.AuthLib
 
             return true;
         }
-        */
 
         public List<Product> Products(Token token)
         {
