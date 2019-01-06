@@ -6,6 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+/// <summary>
+/// Network Types - ONLY FOR SERVER COMMUNICATION, DO NOT SEND SENSITIVE DATA
+/// </summary>
 namespace NetworkTypes
 {
     [Serializable]
@@ -75,7 +78,7 @@ namespace NetworkTypes
             this.HWID = HWID;
         }
     }
-    /*
+
     [Serializable]
     public class OAuth
     {
@@ -87,13 +90,16 @@ namespace NetworkTypes
 
         }
 
-        public OAuth(string PrivateKey, string HWID = "")
+        public OAuth(string PrivateKey, string HWID)
         {
             this.PrivateKey = PrivateKey;
             this.HWID = HWID;
         }
     }
-    */
+
+    /// <summary>
+    /// Token - Authentication (Recieve/Send)
+    /// </summary>
     [Serializable]
     public class Token
     {
@@ -132,6 +138,9 @@ namespace NetworkTypes
         }
     }
 
+    /// <summary>
+    /// Product (Recieve/Send)
+    /// </summary>
     [Serializable]
     public class Product
     {
@@ -168,6 +177,7 @@ namespace NetworkTypes
             this.Image = TryReadProductImage();
         }
 
+        //Get Rid of
         public Product SetFromSQL(MySqlDataReader reader)
         {
             Id = reader.GetInt32(0);
@@ -186,7 +196,7 @@ namespace NetworkTypes
             return this;
         }
 
-        //Try Read Product Image
+        //Get rid of
         private byte[] TryReadProductImage()
         {
             List<byte> bytes = new List<byte>(new byte[] { });
@@ -232,6 +242,7 @@ namespace NetworkTypes
         }
     }
 
+    /*
     [Serializable]
     public class News
     {
@@ -258,6 +269,7 @@ namespace NetworkTypes
             this.PostDate = postdate;
         }
     }
+    */
 
     /// <summary>
     /// Notification Structre - Global Notification Stats
@@ -277,6 +289,7 @@ namespace NetworkTypes
             this.CreationDate = CreationDate;
         }
 
+        //Get rid of
         public Notification(MySqlDataReader reader)
         {
             //Get Notification Base Stats

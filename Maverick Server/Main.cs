@@ -68,6 +68,36 @@ namespace Main
                                 Bytes = Encoding.UTF8.GetBytes("No Token Provided - " + request.Get("Token"));
                             }
                         }
+                        else if (request.Get("Request") == "OAuth")
+                        {
+                            if (request.Contains("UserID"))
+                            {
+                                int UserID = Convert.ToInt32(request.Get("UserID"));
+
+                                if (request.Contains("Username"))
+                                {
+                                    string Username = request.Get("Username");
+
+                                    if (request.Contains("PrivateKey"))
+                                    {
+                                        string PrivateKey = request.Get("PrivateKey");
+
+                                        if (request.Contains("HWID"))
+                                        {
+                                            string HWID = request.Get("HWID");
+
+                                            lock (Cache.OAuths)
+                                            {
+                                                if (!Cache.OAuths.Any(oauth => oauth.UserID == UserID && oauth.PrivateKey == PrivateKey && oauth.HWID == HWID))
+                                                    Cache.OAuths.Add(new OAuth(UserID, Username, PrivateKey, HWID));
+
+                                                Bytes = Encoding.UTF8.GetBytes("Login Found");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         else if (request.Get("Request") == "Products")
                         {
                             string Output = "";
@@ -247,39 +277,38 @@ namespace Main
 
                         Console.WriteLine("Sent Response - " + stopwatch.Elapsed.TotalMilliseconds);
                     }
-                    /*
                     else if (r.Command == "OAuth_Finish")
                     {
+                        Response response = new Response();
+
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
-                        OAuth login = (OAuth)r.Object;
+                        NetworkTypes.OAuth login = (NetworkTypes.OAuth)r.Object;
 
                         Console.WriteLine("Converted OAuth - " + stopwatch.Elapsed.TotalMilliseconds);
 
-                        lock (Cache.OAuth)
+                        lock (Cache.OAuths)
                         {
-                            if (Cache.OAuth.Any(oauth => oauth.PrivateKey == login.PrivateKey))
+                            if (Cache.OAuths.Any(oauth => oauth.PrivateKey == login.PrivateKey && oauth.HWID == login.HWID))
                             {
-                                OAuth = Cache.OAuth.Find(oauth => oauth.PrivateKey == login.PrivateKey);
+                                OAuth OAuths = Cache.OAuths.Find(oauth => oauth.PrivateKey == login.PrivateKey && oauth.HWID == login.HWID);
 
-                                if (OAuth != null)
+                                if (OAuths != null)
                                 {
-                                    ServerResponse = "Login Found" + "-" + Tokens.GenerateToken(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(), login.UserID, OAuth.Username);
+                                    response = new Response("Login Found", new Token().GenerateToken(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(), OAuths.UserID, OAuths.Username));
 
-                                    Cache.OAuth.Remove(OAuth);
+                                    Cache.OAuths.Remove(OAuths);
                                 }
                                 else
                                 {
-                                    ServerResponse = "OAuth Null";
+                                    response = new Response("OAuth Not Found - NULL");
                                 }
                             }
                             else
                             {
-                                ServerResponse = "OAuth Not Found";
+                                response = new Response("OAuth Not Found");
                             }
                         }
-
-                        Response response = HandleLogin.Login(client, login.Username, login.Password, login.HWID);
 
                         Console.WriteLine("Queried Response - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -287,12 +316,11 @@ namespace Main
 
                         Console.WriteLine("Sent Response - " + stopwatch.Elapsed.TotalMilliseconds);
                     }
-                    */
                     else if (r.Command == "Products")
                     {
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
-                        Token token = (Token)r.Token;
+                        NetworkTypes.Token token = (NetworkTypes.Token)r.Token;
 
                         Console.WriteLine("Converted Token - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -316,7 +344,7 @@ namespace Main
                     {
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
-                        Token token = (Token)r.Token;
+                        NetworkTypes.Token token = (NetworkTypes.Token)r.Token;
 
                         Console.WriteLine("Converted Token - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -340,7 +368,7 @@ namespace Main
                     {
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
-                        Token token = (Token)r.Token;
+                        NetworkTypes.Token token = (NetworkTypes.Token)r.Token;
                         Product product = (Product)r.Object;
 
                         Console.WriteLine("Converted Token - " + stopwatch.Elapsed.TotalMilliseconds);

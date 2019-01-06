@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using Token = Main.Token;
 
 namespace MaverickServer.Database
 {
@@ -135,6 +136,7 @@ namespace MaverickServer.Database
             return temp.OrderBy(product => product.Id).ToList();
         }
 
+        /*
         /// <summary>
         /// Returns list of all downloadable products and their status's
         /// </summary>
@@ -160,6 +162,7 @@ namespace MaverickServer.Database
 
             return temp;
         }
+        */
         #endregion
 
         #region Notification

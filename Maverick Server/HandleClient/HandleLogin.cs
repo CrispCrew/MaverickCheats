@@ -1,5 +1,4 @@
-﻿using MaverickServer.HandleClients.Tokens;
-using NetworkTypes;
+﻿using NetworkTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +23,8 @@ namespace Main.HandleClient
                 {
                     UserID = Convert.ToInt32(Response.Split('-')[1]);
 
-                    return new Response(Response.Split('-')[0], Tokens.GenerateToken(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(), UserID, Username));
+                    //Token needs to be NetworkTypes.
+                    return new Response(Response.Split('-')[0], new Token().GenerateToken(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(), UserID, Username));
                 }
                 else
                 {

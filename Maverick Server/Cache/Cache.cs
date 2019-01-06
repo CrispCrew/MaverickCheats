@@ -12,7 +12,7 @@ namespace Main
         /// <summary>
         /// OAUth Instances
         /// </summary>
-        //public static List<OAuth> OAuth = new List<OAuth>();
+        public static List<OAuth> OAuths = new List<OAuth>();
 
         /// <summary>
         /// Login Tokens
@@ -27,7 +27,7 @@ namespace Main
         /// <summary>
         /// Newsfeed Cache
         /// </summary>
-        public static List<News> Newsfeed = new List<News>();
+        //public static List<News> Newsfeed = new List<News>();
 
         /// <summary>
         /// Notification Cache

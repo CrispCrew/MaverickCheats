@@ -349,5 +349,20 @@ namespace Main
         #endregion
 
         #endregion
+
+        private void loginForum_Click(object sender, EventArgs e)
+        {
+            //AutoLogin with Forum
+        }
+
+        private void loginForum_MouseEnter(object sender, EventArgs e)
+        {
+            loginForum.ForeColor = Color.FromArgb(0, 102, 204);
+        }
+
+        private void loginForum_MouseLeave(object sender, EventArgs e)
+        {
+            loginForum.ForeColor = Color.White;
+        }
     }
 }

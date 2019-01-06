@@ -52,6 +52,7 @@ namespace Main
             this.bunifuImageButton3 = new ns1.BunifuImageButton();
             this.bunifuCustomLabel4 = new ns1.BunifuCustomLabel();
             this.failedLogin = new ns1.BunifuCustomLabel();
+            this.loginForum = new ns1.BunifuCustomLabel();
             this.panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.bunifuImageButton4)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.bunifuImageButton2)).BeginInit();
@@ -354,12 +355,27 @@ namespace Main
             this.failedLogin.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.failedLogin.Visible = false;
             // 
+            // loginForum
+            // 
+            this.loginForum.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.loginForum.Font = new System.Drawing.Font("Segoe UI", 10F, ((System.Drawing.FontStyle)((System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Underline))));
+            this.loginForum.ForeColor = System.Drawing.Color.White;
+            this.loginForum.Location = new System.Drawing.Point(568, 312);
+            this.loginForum.Name = "loginForum";
+            this.loginForum.Size = new System.Drawing.Size(139, 28);
+            this.loginForum.TabIndex = 18;
+            this.loginForum.Text = "Login with Website";
+            this.loginForum.Click += new System.EventHandler(this.loginForum_Click);
+            this.loginForum.MouseEnter += new System.EventHandler(this.loginForum_MouseEnter);
+            this.loginForum.MouseLeave += new System.EventHandler(this.loginForum_MouseLeave);
+            // 
             // Login
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(70)))), ((int)(((byte)(73)))));
             this.ClientSize = new System.Drawing.Size(745, 440);
+            this.Controls.Add(this.loginForum);
             this.Controls.Add(this.failedLogin);
             this.Controls.Add(this.bunifuCustomLabel3);
             this.Controls.Add(this.autoLoginCheckBox);
@@ -411,5 +427,6 @@ namespace Main
         private ns1.BunifuImageButton bunifuImageButton5;
         private ns1.BunifuCustomLabel failedLogin;
         private System.Windows.Forms.PictureBox pictureBox1;
+        private ns1.BunifuCustomLabel loginForum;
     }
 }
