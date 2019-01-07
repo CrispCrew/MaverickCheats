@@ -260,7 +260,7 @@ namespace Main
                     }
                     else if (r.Command == "Update")
                     {
-                        Response response = new Response("Updater", new MemoryStream());
+                        Response response = new Response("Update", new MemoryStream());
 
                         //Upload File
                         Console.WriteLine("Reading File");

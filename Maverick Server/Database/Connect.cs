@@ -60,7 +60,8 @@ namespace MaverickServer.Database
                     {
                         Debug.WriteLine("Reading Version");
 
-                        Version = ((!reader.IsDBNull(0)) ? reader.GetString(0) : "0.00");
+                        //Select Index(1) for Beta_Version
+                        Version = ((!reader.IsDBNull(1)) ? reader.GetString(1) : "0.00");
                     }
                 }
             }

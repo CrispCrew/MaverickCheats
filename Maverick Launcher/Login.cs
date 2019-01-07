@@ -18,7 +18,7 @@ namespace Main
     {
         public Client client = new Client();
 
-        public static string Version = "0.89.96.3";
+        public static string Version = "0.01";
 
         public static Token token;
 
@@ -30,123 +30,6 @@ namespace Main
             pictureBox1.Image = Image.FromStream(new MemoryStream(EmbeddedResource.EmbeddedResources.First(resource => resource.Key == "Spinner.gif").Value));
 
             Console.WriteLine("Form Loaded");
-
-            //Auto Login?????
-            if (File.Exists("autologin.data"))
-            {
-                if (File.ReadAllLines("autologin.data").Length < 4)
-                {
-                    try
-                    {
-                        File.Delete("autologin.data");
-                    }
-                    catch
-                    {
-                        MessageBox.Show("AutoLogin File cannot be removed");
-                    }
-
-                    return;
-                }
-
-                Console.WriteLine("Loading AutoLogin Data");
-
-                //Load Config
-                StreamReader sr = new StreamReader("autologin.data");
-                string useAutoLogin = sr.ReadLine();
-                string forumLogin = sr.ReadLine();
-                string userHash = sr.ReadLine();
-                string pwHash = sr.ReadLine();
-
-                sr.Close();
-                sr.Dispose();
-
-                //Setup Decryption...etc
-                rememberMeCheckBox.Checked = !Convert.ToBoolean(useAutoLogin);
-                autoLoginCheckBox.Checked = Convert.ToBoolean(useAutoLogin);
-
-                Console.WriteLine("Decrypting AutoLogin Data");
-
-                userHash = Encryption.decrypt(userHash);
-                pwHash = Encryption.decrypt(pwHash);
-
-                Console.WriteLine("Decrypted AutoLogin Data");
-
-                if (userHash == "" || pwHash == "")
-                {
-                    Password.isPassword = false;
-
-                    Username.Text = "Username";
-                    Password.Text = "Password";
-
-                    Console.WriteLine("Username and Password are not included in the AutoLogin File!");
-                }
-                else
-                {
-                    Password.isPassword = true;
-
-                    Username.Text = userHash;
-                    Password.Text = pwHash;
-                }
-
-                if (Convert.ToBoolean(useAutoLogin) && !Convert.ToBoolean(forumLogin))
-                {
-                    Token TempToken = new Token();
-                    string Error = "";
-
-                    if (client.Login(Username.Text, Password.Text, "", ref TempToken, ref Error))
-                    {
-                        token = TempToken;
-
-                        Console.WriteLine("Login Found-" + token.AuthToken);
-
-                        new Main(client, token).ShowDialog(); //Shows Dialog on this Thread, Thread is held up and wont display Login Form
-                    }
-                    else
-                    {
-                        this.failedLogin.Text = Error;
-                        this.failedLogin.Visible = true;
-                    }
-                }
-                /*
-                #region Forum Login - Unfinished
-                else if (Convert.ToBoolean(useAutoLogin) && Convert.ToBoolean(forumLogin))
-                {
-                    Console.WriteLine("Attempting to AutoLogin with OAuth");
-
-                    string PrivateKey = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("+", "").Replace("=", "").Replace(@"/", "");
-
-                    Process process = Process.Start("https://maverickcheats.eu/community/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + FingerPrint.Value());
-
-                    new Thread(() =>
-                    {
-                        for (int i = 0; i < 10; i++)
-                        {
-                            string Response = client.OAuth_Finish(PrivateKey, ref token);
-
-                            if (Response == "Login Found")
-                            {
-                                Console.WriteLine("Login Found-" + token);
-
-                                new Thread(() => new Main(client, token).ShowDialog()).Start();
-
-                                break;
-                            }
-
-                            Thread.Sleep(2500);
-                        }
-                    }
-                    ).Start();
-                }
-                #endregion
-                */
-                else
-                {
-                    rememberMeCheckBox.Checked = true;
-
-                    Username.Text = userHash;
-                    Password.Text = pwHash;
-                }
-            }
         }
         #endregion
 
@@ -210,6 +93,122 @@ namespace Main
                     }
 
                     Environment.Exit(0);
+                }
+
+                this.BeginInvoke((MethodInvoker)delegate { Title.Text += Version; Title.Refresh(); });
+
+                //Auto Login?????
+                if (File.Exists("autologin.data"))
+                {
+                    if (File.ReadAllLines("autologin.data").Length < 4)
+                    {
+                        try
+                        {
+                            File.Delete("autologin.data");
+                        }
+                        catch
+                        {
+                            MessageBox.Show("AutoLogin File cannot be removed");
+                        }
+
+                        return;
+                    }
+
+                    Console.WriteLine("Loading AutoLogin Data");
+
+                    //Load Config
+                    StreamReader sr = new StreamReader("autologin.data");
+                    string useAutoLogin = sr.ReadLine();
+                    string forumLogin = sr.ReadLine();
+                    string userHash = sr.ReadLine();
+                    string pwHash = sr.ReadLine();
+
+                    sr.Close();
+                    sr.Dispose();
+
+                    //Setup Decryption...etc
+                    this.BeginInvoke((MethodInvoker)delegate { rememberMeCheckBox.Checked = !Convert.ToBoolean(useAutoLogin); });
+                    this.BeginInvoke((MethodInvoker)delegate { autoLoginCheckBox.Checked = Convert.ToBoolean(useAutoLogin); });
+
+
+                    Console.WriteLine("Decrypting AutoLogin Data");
+
+                    userHash = Encryption.decrypt(userHash);
+                    pwHash = Encryption.decrypt(pwHash);
+
+                    Console.WriteLine("Decrypted AutoLogin Data");
+
+                    if (userHash == "" || pwHash == "")
+                    {
+                        Password.PasswordChar = '\0';
+
+                        Username.Text = "Username";
+                        Password.Text = "Password";
+
+                        Console.WriteLine("Username and Password are not included in the AutoLogin File!");
+                    }
+                    else
+                    {
+                        Password.PasswordChar = '*';
+
+                        Username.Text = userHash;
+                        Password.Text = pwHash;
+                    }
+
+                    if (Convert.ToBoolean(useAutoLogin) && !Convert.ToBoolean(forumLogin))
+                    {
+                        Token TempToken = new Token();
+                        string Error = "";
+
+                        if (client.Login(Username.Text, Password.Text, "", ref TempToken, ref Error))
+                        {
+                            token = TempToken;
+
+                            Console.WriteLine("Login Found-" + token.AuthToken);
+
+                            new Main(client, token).ShowDialog(); //Shows Dialog on this Thread, Thread is held up and wont display Login Form
+                        }
+                        else
+                        {
+                            this.failedLogin.Text = Error;
+                            this.failedLogin.Visible = true;
+                        }
+                    }
+                    #region Forum Login
+                    else if (Convert.ToBoolean(useAutoLogin) && Convert.ToBoolean(forumLogin))
+                    {
+                        Console.WriteLine("Attempting to AutoLogin with OAuth");
+
+                        Console.WriteLine("Attempting to AutoLogin with OAuth");
+
+                        string PrivateKey = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("+", "").Replace("=", "").Replace(@"/", "");
+
+                        Process process = Process.Start("https://maverickcheats.eu/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + ""); //FingerPrint.Value()
+
+                        for (int i = 0; i < 10; i++)
+                        {
+                            if (client.OAuth_Finish(PrivateKey, ref token))
+                            {
+                                Console.WriteLine("Login Found-" + token.AuthToken);
+
+                                this.BeginInvoke((MethodInvoker)delegate { new Main(client, token).Show(); });
+
+                                this.BeginInvoke((MethodInvoker)delegate { Hide(); });
+
+                                break;
+                            }
+
+                            Thread.Sleep(2500);
+                        }
+                    }
+                    #endregion
+                    else
+                    {
+                        rememberMeCheckBox.Checked = true;
+
+                        Username.Text = userHash;
+                        Password.Text = pwHash;
+                    }
                 }
 
                 this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = false; });
@@ -289,6 +288,85 @@ namespace Main
                 this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = false; });
             }).Start();
         }
+
+        private void loginForum_Click(object sender, EventArgs e)
+        {
+            //AutoLogin with Forum
+            new Thread(() =>
+            {
+                this.BeginInvoke((MethodInvoker)delegate { bunifuTransition2.ShowSync(pictureBox1);  /*pictureBox1.Visible = true;*/ });
+
+                Console.WriteLine("Attempting to AutoLogin with OAuth");
+
+                string PrivateKey = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("+", "").Replace("=", "").Replace(@"/", "");
+
+                Process process = Process.Start("https://maverickcheats.eu/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + ""); //FingerPrint.Value()
+
+                for (int i = 0; i < 10; i++)
+                {
+                    if (client.OAuth_Finish(PrivateKey, ref token))
+                    {
+                        Console.WriteLine("Login Found-" + token.AuthToken);
+
+                        //Check if Either is Enabled or Disabled
+                        if (File.Exists("autologin.data"))
+                            try
+                            {
+                                File.Delete("autologin.data");
+                            }
+                            catch
+                            {
+                                MessageBox.Show("Configuration File cannot be removed");
+                            }
+
+                        #region AutoLogin
+                        if (autoLoginCheckBox.Checked)
+                        {
+                            StreamWriter sw = new StreamWriter("autologin.data");
+                            sw.WriteLine("True");
+                            sw.WriteLine("True");
+                            sw.WriteLine("");
+                            sw.WriteLine("");
+                            sw.Close();
+                        }
+                        else
+                        {
+                            if (File.Exists("autologin.data"))
+                            {
+                                try
+                                {
+                                    File.Delete("autologin.data");
+                                }
+                                catch
+                                {
+                                    MessageBox.Show("Configuration File cannot be removed");
+                                }
+                            }
+                        }
+                        #endregion
+
+                        this.BeginInvoke((MethodInvoker)delegate { new Main(client, token).Show(); });
+
+                        this.BeginInvoke((MethodInvoker)delegate { Hide(); });
+
+                        break;
+                    }
+
+                    Thread.Sleep(2500);
+                }
+            }
+            ).Start();
+        }
+
+        private void loginForum_MouseEnter(object sender, EventArgs e)
+        {
+            loginForum.ForeColor = Color.FromArgb(0, 102, 204);
+        }
+
+        private void loginForum_MouseLeave(object sender, EventArgs e)
+        {
+            loginForum.ForeColor = Color.White;
+        }
         #endregion
 
         #region Username/Password Event Handlers
@@ -298,6 +376,10 @@ namespace Main
             {
                 Username.Text = "";
             }
+
+            bunifuSeparator1.Visible = false;
+            bunifuSeparator1.LineColor = Color.FromArgb(0, 102, 204);
+            bunifuTransition1.ShowSync(bunifuSeparator1);
         }
 
         private void Username_Leave(object sender, EventArgs e)
@@ -306,24 +388,32 @@ namespace Main
             {
                 Username.Text = "Username";
             }
+
+            bunifuSeparator1.LineColor = Color.Gray;
         }
 
         private void Password_Enter(object sender, EventArgs e)
         {
             if (Password.Text == "" || Password.Text == "Password")
             {
-                Password.isPassword = true;
+                Password.PasswordChar = '*';
                 Password.Text = "";
             }
+
+            bunifuSeparator2.Visible = false;
+            bunifuSeparator2.LineColor = Color.FromArgb(0, 102, 204);
+            bunifuTransition1.ShowSync(bunifuSeparator2);
         }
 
         private void Password_Leave(object sender, EventArgs e)
         {
             if (Password.Text == "")
             {
-                Password.isPassword = false;
+                Password.PasswordChar = '\0';
                 Password.Text = "Password";
             }
+
+            bunifuSeparator2.LineColor = Color.Gray;
         }
         #endregion
 
@@ -349,83 +439,5 @@ namespace Main
         #endregion
 
         #endregion
-
-        private void loginForum_Click(object sender, EventArgs e)
-        {
-            //AutoLogin with Forum
-            new Thread(() =>
-            {
-                this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = true; });
-
-                Console.WriteLine("Attempting to AutoLogin with OAuth");
-
-                string PrivateKey = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("+", "").Replace("=", "").Replace(@"/", "");
-
-                Process process = Process.Start("https://maverickcheats.eu/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + ""); //FingerPrint.Value()
-
-                for (int i = 0; i < 10; i++)
-                {
-                    if (client.OAuth_Finish(PrivateKey, ref token))
-                    {
-                        Console.WriteLine("Login Found-" + token.AuthToken);
-
-                        //Check if Either is Enabled or Disabled
-                        if (File.Exists("autologin.data"))
-                            try
-                            {
-                                File.Delete("autologin.data");
-                            }
-                            catch
-                            {
-                                MessageBox.Show("Configuration File cannot be removed");
-                            }
-                        /*
-                        #region AutoLogin
-                        if (AutoLogin.Checked)
-                        {
-                            StreamWriter sw = new StreamWriter("autologin.data");
-                            sw.WriteLine("True");
-                            sw.WriteLine("True");
-                            sw.WriteLine("");
-                            sw.WriteLine("");
-                            sw.Close();
-                        }
-                        else
-                        {
-                            if (File.Exists("autologin.data"))
-                            {
-                                try
-                                {
-                                    File.Delete("autologin.data");
-                                }
-                                catch
-                                {
-                                    MessageBox.Show("Configuration File cannot be removed");
-                                }
-                            }
-                        }
-                        #endregion
-                        */
-
-                        new Thread(() => new Main(client, token).ShowDialog()).Start();
-
-                        break;
-                    }
-
-                    Thread.Sleep(2500);
-                }
-            }
-            ).Start();
-        }
-
-        private void loginForum_MouseEnter(object sender, EventArgs e)
-        {
-            loginForum.ForeColor = Color.FromArgb(0, 102, 204);
-        }
-
-        private void loginForum_MouseLeave(object sender, EventArgs e)
-        {
-            loginForum.ForeColor = Color.White;
-        }
     }
 }

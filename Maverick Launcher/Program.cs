@@ -22,6 +22,9 @@ namespace Main
             EmbeddedResource.LoadAssembly("Main.Resources.Bunifu_UI_v1.52.dll", "Bunifu_UI_v1.52.dll");
 
             //Get embedded Theme.dll if it isnt on the Disk
+            EmbeddedResource.LoadAssembly("Main.Resources.NetworkTypes.dll", "NetworkTypes.dll");
+
+            //Get embedded images if it isnt on the Disk
             EmbeddedResource.LoadResource("Main.Resources.Spinner.gif", "Spinner.gif");
 
             //Set Debug Log to English
