@@ -44,6 +44,8 @@ namespace Main
 
                 HttpListenerContext context = listener.GetContext();
 
+                context.Response.ContentType = "text/plain";
+
                 try
                 {
                     Functions.Request request = new Functions.Request(context.Request.Url.Query);
@@ -65,7 +67,14 @@ namespace Main
                             }
                             else
                             {
-                                Bytes = Encoding.UTF8.GetBytes("No Token Provided - " + request.Get("Token"));
+                                if (Cache.AuthTokens.Any(token => token.IP == context.Request.RemoteEndPoint.Address.ToString()))
+                                {
+                                    Bytes = Encoding.UTF8.GetBytes("Authenticated");
+                                }
+                                else
+                                {
+                                    Bytes = Encoding.UTF8.GetBytes("Not Authenticated - " + context.Request.RemoteEndPoint.Address.ToString());
+                                }
                             }
                         }
                         else if (request.Get("Request") == "OAuth")
@@ -136,6 +145,50 @@ namespace Main
 
                             Bytes = Encoding.UTF8.GetBytes(Output);
                         }
+                        else if (request.Get("Request") == "Download")
+                        {
+                            if (request.Contains("Token"))
+                            {
+                                if (Cache.AuthTokens.Any(token => token.AuthToken == request.Get("Token") && token.IP == context.Request.RemoteEndPoint.Address.ToString()))
+                                {
+                                    if (request.Contains("ProductID"))
+                                    {
+                                        int ProductID = Convert.ToInt32(request.Get("ProductID"));
+
+                                        Connect connect = new Connect();
+
+                                        List<Product> products = connect.QueryUserProducts(Cache.AuthTokens.Find(token => token.AuthToken == request.Get("Token")).ID);
+
+                                        if (products.Any(product => product.Id == ProductID))
+                                        {
+                                            context.Response.ContentType = "application/octet-stream";
+
+                                            Bytes = File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\DLLs\\" + Cache.Products.Find(product => product.Id == ProductID).Name + ".dll");
+
+                                            int i = 0;
+                                            foreach (byte encrypt in Bytes)
+                                            {
+                                                //End
+                                                if (i + 1 < Bytes.Length)
+                                                    Bytes[i] = (byte)(encrypt ^ Bytes[i++]);
+                                                else
+                                                    Bytes[i] = (byte)(encrypt ^ Bytes[0]);
+                                            }
+                                        }
+
+                                        connect.Close();
+                                    }
+                                }
+                                else
+                                {
+                                    Bytes = Encoding.UTF8.GetBytes("Not Authenticated - Token Not Found");
+                                }
+                            }
+                            else
+                            {
+                                Bytes = Encoding.UTF8.GetBytes("Not Authenticated - No Token");
+                            }
+                        }
                         else
                         {
                             Bytes = Encoding.UTF8.GetBytes("Invalid Request - " + request.Data);
@@ -146,8 +199,7 @@ namespace Main
                         Bytes = Encoding.UTF8.GetBytes("No Request Provided - " + request.Data);
                     }
 
-                    //
-                    context.Response.ContentType = "text/plain";
+                    //application/octet-stream
                     context.Response.ContentLength64 = Bytes.Length;
                     context.Response.AddHeader("Date", DateTime.Now.ToString("r"));
 
@@ -159,18 +211,6 @@ namespace Main
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.ToString());
-
-                    Bytes = Encoding.UTF8.GetBytes(ex.ToString());
-
-                    //output Error
-                    context.Response.ContentType = "text/plain";
-                    context.Response.ContentLength64 = Bytes.Length;
-                    context.Response.AddHeader("Date", DateTime.Now.ToString("r"));
-
-                    context.Response.OutputStream.Write(Bytes, 0, Bytes.Length);
-
-                    context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                    context.Response.OutputStream.Flush();
                 }
             }
         }

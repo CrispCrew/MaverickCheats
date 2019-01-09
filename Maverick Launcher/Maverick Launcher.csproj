@@ -63,7 +63,6 @@
     </Reference>
     <Reference Include="NetworkTypes">
       <HintPath>..\NetworkTypes\bin\Debug\NetworkTypes.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

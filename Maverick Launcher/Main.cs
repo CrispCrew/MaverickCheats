@@ -287,8 +287,33 @@ namespace Main
         #endregion
 
         #region CheatList Events
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            //Scroll to Move Down/Up
+            if (keyData == Keys.Down)
+            {
+                Console.WriteLine("Key Down!");
+
+                flowLayoutPanel1.Top -= 25;
+
+                flowLayoutPanel1.PerformLayout();
+            }
+            else if (keyData == Keys.Up)
+            {
+                Console.WriteLine("Key Down!");
+
+                flowLayoutPanel1.Top += 25;
+
+                flowLayoutPanel1.PerformLayout();
+            }
+
+            return true;
+        }
+
         private void CheatListTab_Click(object sender, EventArgs e)
         {
+            flowLayoutPanel1.Focus();
+
             BunifuFlatButton button = ((BunifuFlatButton)sender);
 
             foreach (BunifuFlatButton control in flowLayoutPanel1.Controls)

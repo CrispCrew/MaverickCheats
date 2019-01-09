@@ -96,7 +96,7 @@ namespace Main.AuthLib
             return (string)r.Object;
         }
 
-        public MemoryStream Update()
+        public MemoryStream Updater()
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -104,6 +104,36 @@ namespace Main.AuthLib
             Console.WriteLine("Starting Request");
 
             Request message = new Request("Updater");
+
+            IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
+
+            serverStream = clientSocket.GetStream(); // the stream 
+
+            Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
+
+            formatter.Serialize(serverStream, message); // the serialization process 
+
+            Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+
+            Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
+
+            Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+
+            Console.WriteLine("Recieved: " + r.Message);
+
+            stopwatch.Stop();
+
+            return (MemoryStream)r.Object;
+        }
+
+        public MemoryStream Update()
+        {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            Console.WriteLine("Starting Request");
+
+            Request message = new Request("Update");
 
             IFormatter formatter = new BinaryFormatter(); // the formatter that will serialize my object on my stream 
 

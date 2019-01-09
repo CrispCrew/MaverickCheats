@@ -54,7 +54,7 @@ namespace Main
                     Console.WriteLine("Starting Update Protocol");
 
                     //Extract the Update and only get the Updater.exe
-                    using (ZipArchive archive = new ZipArchive(client.Update(), ZipArchiveMode.Read))
+                    using (ZipArchive archive = new ZipArchive(client.Updater(), ZipArchiveMode.Read))
                     {
                         foreach (ZipArchiveEntry file in archive.Entries)
                         {
