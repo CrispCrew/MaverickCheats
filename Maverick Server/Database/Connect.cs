@@ -87,7 +87,7 @@ namespace MaverickServer.Database
                         Debug.WriteLine("Reading Products");
 
                         //Get Product Data from SQL Reader
-                        temp.Add(new Product().SetFromSQL(reader));
+                        temp.Add(new Product(reader.GetInt32(0), reader.GetInt32(1), reader.GetString(2), reader.GetString(3), reader.GetString(4), reader.GetInt32(5), reader.GetInt32(6), reader.GetInt32(7), ((reader.GetInt32(9) == 1) ? true : false)));
                     }
                 }
             }
@@ -99,11 +99,8 @@ namespace MaverickServer.Database
         /// Returns list of all downloadable products and their status's
         /// </summary>
         /// <returns></returns>
-        public List<Product> QueryUserProducts(int ID)
+        public static List<Product> QueryUserProducts(int ID)
         {
-            //Cache Products
-            Cache.Products = QueryProducts();
-
             List<Product> temp = new List<Product>();
 
             //If IsAdmin (Forum Permission Check?) , give all products
@@ -167,6 +164,7 @@ namespace MaverickServer.Database
         #endregion
 
         #region Notification
+        /*
         public List<Notification> QueryNotifications()
         {
             List<Notification> temp = new List<Notification>();
@@ -248,6 +246,7 @@ namespace MaverickServer.Database
                 return false;
             }
         }
+        */
         #endregion
 
         #region Logs
@@ -277,52 +276,6 @@ namespace MaverickServer.Database
             com.Parameters.AddWithValue("@ProcessPath", ProcessPath);
             com.Parameters.AddWithValue("@RawLog", RawLog);
             com.ExecuteNonQuery();
-        }
-        #endregion
-
-        #region Tokens
-        /// <summary>
-        /// Returns list of all downloadable products and their status's
-        /// </summary>
-        /// <returns></returns>
-        public bool CacheTokens(List<Token> tokens)
-        {
-            foreach (Token token in tokens)
-            {
-                MySqlCommand com = new MySqlCommand("INSERT INTO tokens (UserID, IP, Username, AuthToken, LastDevice) VALUES (@UserID, @IP, @Username, @AuthToken, @LastDevice)", connection);
-                com.Parameters.AddWithValue("@UserID", token.ID);
-                com.Parameters.AddWithValue("@IP", token.IP);
-                com.Parameters.AddWithValue("@Username", token.Username);
-                com.Parameters.AddWithValue("@AuthToken", token.AuthToken);
-                com.Parameters.AddWithValue("@LastDevice", ((token.LastDevice == null) ? "" : token.LastDevice));
-                com.ExecuteNonQuery();
-                com.Dispose();
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Returns list of all downloadable products and their status's
-        /// </summary>
-        /// <returns></returns>
-        public List<Token> LoadTokens()
-        {
-            List<Token> tokens = new List<Token>();
-
-            //Handle Manual Products
-            using (MySqlCommand command = new MySqlCommand("SELECT * FROM tokens", connection))
-            {
-                using (MySqlDataReader reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        tokens.Add(new Token(reader.GetString(2), reader.GetInt32(1), reader.GetString(3), reader.GetString(5), reader.GetString(4)));
-                    }
-                }
-            }
-
-            return tokens;
         }
         #endregion
     }

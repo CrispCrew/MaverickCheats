@@ -14,26 +14,45 @@ namespace Main.HandleClient
     {
         public static Response Login(TcpClient client, string Username, string Password, string HWID)
         {
+            //Split Response into 3 indexes, Login Message, User ID, Avatar
+
             int UserID = 0;
+            string AvatarURL = "";
             string Response = new WebClient().DownloadString("http://api.maverickcheats.eu/community/maverickcheats/login.php?Username=" + HttpUtility.UrlEncode(Username) + "&Password=" + HttpUtility.UrlEncode(Password) + "&HWID=" + HttpUtility.UrlEncode(HWID));
 
             if (Response.Contains("-"))
             {
-                if (Response.Split('-')[0] == "Login Found")
+                if (Response.Split('-').Length >= 2)
                 {
-                    UserID = Convert.ToInt32(Response.Split('-')[1]);
+                    if (Response.Split('-')[0] == "Login Found")
+                    {
+                        if (Response.Split('-')[1] != "")
+                        {
+                            UserID = int.TryParse(Response.Split('-')[1], out _) ? int.Parse(Response.Split('-')[1]) : 0;
 
-                    //Token needs to be NetworkTypes.
-                    return new Response(Response.Split('-')[0], new Token().GenerateToken(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(), UserID, Username));
+                            if (Response.Split('-')[2] != "")
+                                AvatarURL = Response.Split('-')[2];
+
+                            return new Response("Login", Token.GenerateToken(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(), new Member(UserID, Username, AvatarURL)));
+                        }
+                        else
+                        {
+                            return new Response("Login", "Login Failed - UserID Query Failed", true);
+                        }
+                    }
+                    else
+                    {
+                        return new Response("Login", "Login Failed - Login not Found", true);
+                    }
                 }
                 else
                 {
-                    return new Response(Response.Split('-')[0]);
+                    return new Response("Login", "Internal Error - No Data Provided", true);
                 }
             }
             else
             {
-                return new Response(Response);
+                return new Response("Login", "Internal Error - No Data Provided", true);
             }
         }
     }

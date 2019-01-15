@@ -34,8 +34,8 @@ namespace Main
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Login));
-            BunifuAnimatorNS.Animation animation6 = new BunifuAnimatorNS.Animation();
-            BunifuAnimatorNS.Animation animation5 = new BunifuAnimatorNS.Animation();
+            BunifuAnimatorNS.Animation animation2 = new BunifuAnimatorNS.Animation();
+            BunifuAnimatorNS.Animation animation1 = new BunifuAnimatorNS.Animation();
             this.panel2 = new System.Windows.Forms.Panel();
             this.bunifuImageButton4 = new ns1.BunifuImageButton();
             this.bunifuImageButton2 = new ns1.BunifuImageButton();
@@ -44,8 +44,8 @@ namespace Main
             this.bunifuCustomLabel1 = new ns1.BunifuCustomLabel();
             this.rememberMeCheckBox = new ns1.BunifuCheckbox();
             this.loginButton = new ns1.BunifuThinButton2();
-            this.bunifuCustomLabel2 = new ns1.BunifuCustomLabel();
-            this.bunifuCustomLabel3 = new ns1.BunifuCustomLabel();
+            this.RememberMeLabel = new ns1.BunifuCustomLabel();
+            this.AutoLoginLabel = new ns1.BunifuCustomLabel();
             this.autoLoginCheckBox = new ns1.BunifuCheckbox();
             this.panel1 = new System.Windows.Forms.Panel();
             this.Title = new ns1.BunifuCustomLabel();
@@ -214,31 +214,33 @@ namespace Main
             this.loginButton.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.loginButton.Click += new System.EventHandler(this.loginButton_Click);
             // 
-            // bunifuCustomLabel2
+            // RememberMeLabel
             // 
-            this.bunifuCustomLabel2.AutoSize = true;
-            this.bunifuTransition1.SetDecoration(this.bunifuCustomLabel2, BunifuAnimatorNS.DecorationType.None);
-            this.bunifuTransition2.SetDecoration(this.bunifuCustomLabel2, BunifuAnimatorNS.DecorationType.None);
-            this.bunifuCustomLabel2.Font = new System.Drawing.Font("Calibri", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.bunifuCustomLabel2.ForeColor = System.Drawing.Color.Silver;
-            this.bunifuCustomLabel2.Location = new System.Drawing.Point(432, 314);
-            this.bunifuCustomLabel2.Name = "bunifuCustomLabel2";
-            this.bunifuCustomLabel2.Size = new System.Drawing.Size(90, 15);
-            this.bunifuCustomLabel2.TabIndex = 13;
-            this.bunifuCustomLabel2.Text = "Remember Me";
+            this.RememberMeLabel.AutoSize = true;
+            this.bunifuTransition1.SetDecoration(this.RememberMeLabel, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition2.SetDecoration(this.RememberMeLabel, BunifuAnimatorNS.DecorationType.None);
+            this.RememberMeLabel.Font = new System.Drawing.Font("Calibri", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.RememberMeLabel.ForeColor = System.Drawing.Color.Silver;
+            this.RememberMeLabel.Location = new System.Drawing.Point(432, 314);
+            this.RememberMeLabel.Name = "RememberMeLabel";
+            this.RememberMeLabel.Size = new System.Drawing.Size(90, 15);
+            this.RememberMeLabel.TabIndex = 13;
+            this.RememberMeLabel.Text = "Remember Me";
+            this.RememberMeLabel.Click += new System.EventHandler(this.RememberMeLabel_Click);
             // 
-            // bunifuCustomLabel3
+            // AutoLoginLabel
             // 
-            this.bunifuCustomLabel3.AutoSize = true;
-            this.bunifuTransition1.SetDecoration(this.bunifuCustomLabel3, BunifuAnimatorNS.DecorationType.None);
-            this.bunifuTransition2.SetDecoration(this.bunifuCustomLabel3, BunifuAnimatorNS.DecorationType.None);
-            this.bunifuCustomLabel3.Font = new System.Drawing.Font("Calibri", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.bunifuCustomLabel3.ForeColor = System.Drawing.Color.Silver;
-            this.bunifuCustomLabel3.Location = new System.Drawing.Point(432, 365);
-            this.bunifuCustomLabel3.Name = "bunifuCustomLabel3";
-            this.bunifuCustomLabel3.Size = new System.Drawing.Size(66, 15);
-            this.bunifuCustomLabel3.TabIndex = 15;
-            this.bunifuCustomLabel3.Text = "Auto Login";
+            this.AutoLoginLabel.AutoSize = true;
+            this.bunifuTransition1.SetDecoration(this.AutoLoginLabel, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition2.SetDecoration(this.AutoLoginLabel, BunifuAnimatorNS.DecorationType.None);
+            this.AutoLoginLabel.Font = new System.Drawing.Font("Calibri", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.AutoLoginLabel.ForeColor = System.Drawing.Color.Silver;
+            this.AutoLoginLabel.Location = new System.Drawing.Point(432, 365);
+            this.AutoLoginLabel.Name = "AutoLoginLabel";
+            this.AutoLoginLabel.Size = new System.Drawing.Size(66, 15);
+            this.AutoLoginLabel.TabIndex = 15;
+            this.AutoLoginLabel.Text = "Auto Login";
+            this.AutoLoginLabel.Click += new System.EventHandler(this.AutoLoginLabel_Click);
             // 
             // autoLoginCheckBox
             // 
@@ -283,7 +285,7 @@ namespace Main
             this.Title.Location = new System.Drawing.Point(37, 0);
             this.Title.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.Title.Name = "Title";
-            this.Title.Size = new System.Drawing.Size(247, 40);
+            this.Title.Size = new System.Drawing.Size(321, 40);
             this.Title.TabIndex = 19;
             this.Title.Text = "MaverickCheats - v";
             this.Title.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -435,44 +437,44 @@ namespace Main
             // 
             this.bunifuTransition1.AnimationType = BunifuAnimatorNS.AnimationType.Leaf;
             this.bunifuTransition1.Cursor = null;
-            animation6.AnimateOnlyDifferences = true;
-            animation6.BlindCoeff = ((System.Drawing.PointF)(resources.GetObject("animation6.BlindCoeff")));
-            animation6.LeafCoeff = 1F;
-            animation6.MaxTime = 1F;
-            animation6.MinTime = 0F;
-            animation6.MosaicCoeff = ((System.Drawing.PointF)(resources.GetObject("animation6.MosaicCoeff")));
-            animation6.MosaicShift = ((System.Drawing.PointF)(resources.GetObject("animation6.MosaicShift")));
-            animation6.MosaicSize = 0;
-            animation6.Padding = new System.Windows.Forms.Padding(0);
-            animation6.RotateCoeff = 0F;
-            animation6.RotateLimit = 0F;
-            animation6.ScaleCoeff = ((System.Drawing.PointF)(resources.GetObject("animation6.ScaleCoeff")));
-            animation6.SlideCoeff = ((System.Drawing.PointF)(resources.GetObject("animation6.SlideCoeff")));
-            animation6.TimeCoeff = 0F;
-            animation6.TransparencyCoeff = 0F;
-            this.bunifuTransition1.DefaultAnimation = animation6;
+            animation2.AnimateOnlyDifferences = true;
+            animation2.BlindCoeff = ((System.Drawing.PointF)(resources.GetObject("animation2.BlindCoeff")));
+            animation2.LeafCoeff = 1F;
+            animation2.MaxTime = 1F;
+            animation2.MinTime = 0F;
+            animation2.MosaicCoeff = ((System.Drawing.PointF)(resources.GetObject("animation2.MosaicCoeff")));
+            animation2.MosaicShift = ((System.Drawing.PointF)(resources.GetObject("animation2.MosaicShift")));
+            animation2.MosaicSize = 0;
+            animation2.Padding = new System.Windows.Forms.Padding(0);
+            animation2.RotateCoeff = 0F;
+            animation2.RotateLimit = 0F;
+            animation2.ScaleCoeff = ((System.Drawing.PointF)(resources.GetObject("animation2.ScaleCoeff")));
+            animation2.SlideCoeff = ((System.Drawing.PointF)(resources.GetObject("animation2.SlideCoeff")));
+            animation2.TimeCoeff = 0F;
+            animation2.TransparencyCoeff = 0F;
+            this.bunifuTransition1.DefaultAnimation = animation2;
             this.bunifuTransition1.MaxAnimationTime = 1000;
             // 
             // bunifuTransition2
             // 
             this.bunifuTransition2.AnimationType = BunifuAnimatorNS.AnimationType.ScaleAndRotate;
             this.bunifuTransition2.Cursor = null;
-            animation5.AnimateOnlyDifferences = true;
-            animation5.BlindCoeff = ((System.Drawing.PointF)(resources.GetObject("animation5.BlindCoeff")));
-            animation5.LeafCoeff = 0F;
-            animation5.MaxTime = 1F;
-            animation5.MinTime = 0F;
-            animation5.MosaicCoeff = ((System.Drawing.PointF)(resources.GetObject("animation5.MosaicCoeff")));
-            animation5.MosaicShift = ((System.Drawing.PointF)(resources.GetObject("animation5.MosaicShift")));
-            animation5.MosaicSize = 0;
-            animation5.Padding = new System.Windows.Forms.Padding(30);
-            animation5.RotateCoeff = 0.5F;
-            animation5.RotateLimit = 0.2F;
-            animation5.ScaleCoeff = ((System.Drawing.PointF)(resources.GetObject("animation5.ScaleCoeff")));
-            animation5.SlideCoeff = ((System.Drawing.PointF)(resources.GetObject("animation5.SlideCoeff")));
-            animation5.TimeCoeff = 0F;
-            animation5.TransparencyCoeff = 0F;
-            this.bunifuTransition2.DefaultAnimation = animation5;
+            animation1.AnimateOnlyDifferences = true;
+            animation1.BlindCoeff = ((System.Drawing.PointF)(resources.GetObject("animation1.BlindCoeff")));
+            animation1.LeafCoeff = 0F;
+            animation1.MaxTime = 1F;
+            animation1.MinTime = 0F;
+            animation1.MosaicCoeff = ((System.Drawing.PointF)(resources.GetObject("animation1.MosaicCoeff")));
+            animation1.MosaicShift = ((System.Drawing.PointF)(resources.GetObject("animation1.MosaicShift")));
+            animation1.MosaicSize = 0;
+            animation1.Padding = new System.Windows.Forms.Padding(30);
+            animation1.RotateCoeff = 0.5F;
+            animation1.RotateLimit = 0.2F;
+            animation1.ScaleCoeff = ((System.Drawing.PointF)(resources.GetObject("animation1.ScaleCoeff")));
+            animation1.SlideCoeff = ((System.Drawing.PointF)(resources.GetObject("animation1.SlideCoeff")));
+            animation1.TimeCoeff = 0F;
+            animation1.TransparencyCoeff = 0F;
+            this.bunifuTransition2.DefaultAnimation = animation1;
             this.bunifuTransition2.MaxAnimationTime = 1000;
             // 
             // Login
@@ -487,9 +489,9 @@ namespace Main
             this.Controls.Add(this.Username);
             this.Controls.Add(this.loginForum);
             this.Controls.Add(this.failedLogin);
-            this.Controls.Add(this.bunifuCustomLabel3);
+            this.Controls.Add(this.AutoLoginLabel);
             this.Controls.Add(this.autoLoginCheckBox);
-            this.Controls.Add(this.bunifuCustomLabel2);
+            this.Controls.Add(this.RememberMeLabel);
             this.Controls.Add(this.loginButton);
             this.Controls.Add(this.rememberMeCheckBox);
             this.Controls.Add(this.bunifuCustomLabel1);
@@ -526,8 +528,8 @@ namespace Main
         private ns1.BunifuCustomLabel bunifuCustomLabel1;
         private ns1.BunifuCheckbox rememberMeCheckBox;
         private ns1.BunifuThinButton2 loginButton;
-        private ns1.BunifuCustomLabel bunifuCustomLabel2;
-        private ns1.BunifuCustomLabel bunifuCustomLabel3;
+        private ns1.BunifuCustomLabel RememberMeLabel;
+        private ns1.BunifuCustomLabel AutoLoginLabel;
         private ns1.BunifuCheckbox autoLoginCheckBox;
         private System.Windows.Forms.Panel panel1;
         private ns1.BunifuImageButton bunifuImageButton3;

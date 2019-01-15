@@ -181,11 +181,18 @@ namespace Main.AuthLib
 
             Console.WriteLine("Recieved: " + r.Message);
 
-            if (r.Message == "Login Found" && r.Object is Token)
-                token = (Token)r.Object;
+            if (r.Error == false)
+                if (r.Object is Token)
+                    token = (Token)r.Object;
+                else
+                {
+                    Error = (string)r.Object;
+
+                    return false;
+                }
             else
             {
-                Error = r.Message;
+                Error = (string)r.Object;
 
                 return false;
             }
@@ -197,7 +204,7 @@ namespace Main.AuthLib
         /// Contacts server for Login Check
         /// </summary>
         /// <returns></returns>
-        public bool OAuth_Finish(string PrivateKey, ref Token token)
+        public bool OAuth_Finish(string PrivateKey, ref Token Token, ref string Error)
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -222,10 +229,21 @@ namespace Main.AuthLib
 
             Console.WriteLine("Recieved: " + r.Message);
 
-            if (r.Message == "Login Found" && r.Object is Token)
-                token = (Token)r.Object;
+            if (r.Error == false)
+                if (r.Object is Token)
+                    Token = (Token)r.Object;
+                else
+                {
+                    Error = (string)r.Object;
+
+                    return false;
+                }
             else
+            {
+                Error = (string)r.Object;
+
                 return false;
+            }
 
             return true;
         }

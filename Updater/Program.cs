@@ -33,7 +33,9 @@ namespace Updater
         Retry:
             //Kill Process's
             foreach (Process process in new List<Process>(Process.GetProcesses().Where(process => process.ProcessName.ToLower() == "maverickclient" || process.ProcessName.ToLower() == "run" || (process.ProcessName.ToLower() == "updater" && process.Id != Process.GetCurrentProcess().Id))))
-                try { process.CloseMainWindow(); process.Close(); process.Kill(); } catch {  }
+                try { process.Kill(); } catch { }
+
+            Thread.Sleep(2500);
 
             //Starting Updates
             Debug.WriteLine("Starting Update Protocol");

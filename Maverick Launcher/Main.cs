@@ -1,6 +1,5 @@
 ﻿using ns1;
 using Main.AuthLib;
-using MaverickClient;
 using NetworkTypes;
 using System;
 using System.Collections.Generic;
@@ -43,6 +42,9 @@ namespace Main
             sideBar.Width = 50;
 
             bunifuTransition2.Show(memberAvatar);
+
+            memberAvatar.Image = token.Member.Avatar;
+            memberUsername.Text = token.Member.Username;
         }
 
         private void Main_Load(object sender, EventArgs e)
@@ -106,6 +108,24 @@ namespace Main
             }).Start();
         }
 
+        private void SideBar_MouseWheel(object sender, MouseEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                if (flowLayoutPanel1.Top < 0)
+                    flowLayoutPanel1.Top += 25;
+
+                flowLayoutPanel1.PerformLayout();
+            }
+            else
+            {
+                if (flowLayoutPanel1.Bottom > 50)
+                    flowLayoutPanel1.Top -= 25;
+
+                flowLayoutPanel1.PerformLayout();
+            }
+        }
+
         private void launchButton_Click(object sender, EventArgs e)
         {
             new Thread(() =>
@@ -126,21 +146,6 @@ namespace Main
                     MessageBox.Show("We're sorry, this cheat is being updated by the Development Team. Check back later, Thanks.");
 
                     return;
-                }
-
-                if (!product.Internal)
-                {
-                    if (Process.GetProcessesByName(product.ProcessName).Length == 0)
-                    {
-                        MessageBox.Show("The game for this cheat is currently not running, please start " + product.ProcessName);
-
-                        return;
-                    }
-
-                    if (Fullscreen.IsForegroundFullScreen(Process.GetProcessesByName(product.ProcessName).FirstOrDefault().MainWindowHandle))
-                    {
-                        MessageBox.Show("Your game might be Fullscreen, if it is not you may ignore this message and click 'Ok'.\nRemember, our External Cheats require the game to be 'Windowed', 'Borderless' or 'Fullscreen Windowed'.");
-                    }
                 }
 
                 this.BeginInvoke((MethodInvoker)delegate { bunifuTransition3.ShowSync(loading); });
@@ -211,7 +216,7 @@ namespace Main
                     {
                         WorkingDirectory = Environment.CurrentDirectory + "\\" + product.Name + "\\",
                         FileName = Environment.CurrentDirectory + "\\" + product.Name + "\\run.exe",
-                        Arguments = token.AuthToken,
+                        Arguments = token.AuthToken + " " + product.Id,
                         RedirectStandardOutput = false,
                         //UseShellExecute = false,
                         Verb = "runas"
@@ -292,17 +297,15 @@ namespace Main
             //Scroll to Move Down/Up
             if (keyData == Keys.Down)
             {
-                Console.WriteLine("Key Down!");
-
-                flowLayoutPanel1.Top -= 25;
+                if (flowLayoutPanel1.Bottom > 50)
+                    flowLayoutPanel1.Top -= 25;
 
                 flowLayoutPanel1.PerformLayout();
             }
             else if (keyData == Keys.Up)
             {
-                Console.WriteLine("Key Down!");
-
-                flowLayoutPanel1.Top += 25;
+                if (flowLayoutPanel1.Top < 0)
+                    flowLayoutPanel1.Top += 25;
 
                 flowLayoutPanel1.PerformLayout();
             }
@@ -379,5 +382,20 @@ namespace Main
             }
         }
         #endregion
+
+        private void BugReport_MouseEnter(object sender, EventArgs e)
+        {
+            BugReport.ForeColor = Color.FromArgb(0, 102, 204);
+        }
+
+        private void BugReport_MouseLeave(object sender, EventArgs e)
+        {
+            BugReport.ForeColor = Color.White;
+        }
+
+        private void BugReport_Click(object sender, EventArgs e)
+        {
+            Process.Start("https://maverickcheats.eu/community/forum/23-bug-report/");
+        }
     }
 }

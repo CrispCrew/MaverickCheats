@@ -18,7 +18,7 @@ namespace Main
     {
         public Client client = new Client();
 
-        public static string Version = "0.01";
+        public static string Version = "0.05.1";
 
         public static Token token;
 
@@ -30,6 +30,8 @@ namespace Main
             pictureBox1.Image = Image.FromStream(new MemoryStream(EmbeddedResource.EmbeddedResources.First(resource => resource.Key == "Spinner.gif").Value));
 
             Console.WriteLine("Form Loaded");
+
+            Title.Text += Version;
         }
         #endregion
 
@@ -95,8 +97,6 @@ namespace Main
                     Environment.Exit(0);
                 }
 
-                this.BeginInvoke((MethodInvoker)delegate { Title.Text += Version; Title.Refresh(); });
-
                 //Auto Login?????
                 if (File.Exists("autologin.data"))
                 {
@@ -130,7 +130,6 @@ namespace Main
                     this.BeginInvoke((MethodInvoker)delegate { rememberMeCheckBox.Checked = !Convert.ToBoolean(useAutoLogin); });
                     this.BeginInvoke((MethodInvoker)delegate { autoLoginCheckBox.Checked = Convert.ToBoolean(useAutoLogin); });
 
-
                     Console.WriteLine("Decrypting AutoLogin Data");
 
                     userHash = Encryption.decrypt(userHash);
@@ -140,24 +139,30 @@ namespace Main
 
                     if (userHash == "" || pwHash == "")
                     {
-                        Password.PasswordChar = '\0';
+                        this.BeginInvoke((MethodInvoker)delegate
+                        {
+                            Password.PasswordChar = '\0';
 
-                        Username.Text = "Username";
-                        Password.Text = "Password";
+                            Username.Text = "Username";
+                            Password.Text = "Password";
+                        });
 
                         Console.WriteLine("Username and Password are not included in the AutoLogin File!");
                     }
                     else
                     {
-                        Password.PasswordChar = '*';
+                        this.BeginInvoke((MethodInvoker)delegate
+                        {
+                            Password.PasswordChar = '*';
 
-                        Username.Text = userHash;
-                        Password.Text = pwHash;
+                            Username.Text = userHash;
+                            Password.Text = pwHash;
+                        });
                     }
 
                     if (Convert.ToBoolean(useAutoLogin) && !Convert.ToBoolean(forumLogin))
                     {
-                        Token TempToken = new Token();
+                        Token TempToken = null;
                         string Error = "";
 
                         if (client.Login(Username.Text, Password.Text, "", ref TempToken, ref Error))
@@ -166,12 +171,17 @@ namespace Main
 
                             Console.WriteLine("Login Found-" + token.AuthToken);
 
-                            new Main(client, token).ShowDialog(); //Shows Dialog on this Thread, Thread is held up and wont display Login Form
+                            this.BeginInvoke((MethodInvoker)delegate { new Main(client, token).Show(); });
+
+                            this.BeginInvoke((MethodInvoker)delegate { Hide(); });
                         }
                         else
                         {
-                            this.failedLogin.Text = Error;
-                            this.failedLogin.Visible = true;
+                            this.BeginInvoke((MethodInvoker)delegate
+                            {
+                                this.failedLogin.Text = Error;
+                                this.failedLogin.Visible = true;
+                            });
                         }
                     }
                     #region Forum Login
@@ -185,9 +195,11 @@ namespace Main
 
                         Process process = Process.Start("https://maverickcheats.eu/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + ""); //FingerPrint.Value()
 
+                        string Error = "";
+
                         for (int i = 0; i < 10; i++)
                         {
-                            if (client.OAuth_Finish(PrivateKey, ref token))
+                            if (client.OAuth_Finish(PrivateKey, ref token, ref Error))
                             {
                                 Console.WriteLine("Login Found-" + token.AuthToken);
 
@@ -200,6 +212,12 @@ namespace Main
 
                             Thread.Sleep(2500);
                         }
+
+                        this.BeginInvoke((MethodInvoker)delegate
+                        {
+                            this.failedLogin.Text = Error;
+                            this.failedLogin.Visible = true;
+                        });
                     }
                     #endregion
                     else
@@ -223,7 +241,7 @@ namespace Main
             {
                 this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = true; });
 
-                Token token = new Token();
+                Token token = null;
                 string Error = "";
 
                 if (client.Login(Username.Text, Password.Text, "", ref token, ref Error))
@@ -282,7 +300,6 @@ namespace Main
                 {
                     this.BeginInvoke((MethodInvoker)delegate { failedLogin.Text = Error; });
                     this.BeginInvoke((MethodInvoker)delegate { failedLogin.Visible = true; });
-
                 }
 
                 this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = false; });
@@ -302,9 +319,11 @@ namespace Main
 
                 Process process = Process.Start("https://maverickcheats.eu/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + ""); //FingerPrint.Value()
 
+                string Error = "";
+
                 for (int i = 0; i < 10; i++)
                 {
-                    if (client.OAuth_Finish(PrivateKey, ref token))
+                    if (client.OAuth_Finish(PrivateKey, ref token, ref Error))
                     {
                         Console.WriteLine("Login Found-" + token.AuthToken);
 
@@ -354,6 +373,9 @@ namespace Main
 
                     Thread.Sleep(2500);
                 }
+
+                this.BeginInvoke((MethodInvoker)delegate { failedLogin.Text = Error; });
+                this.BeginInvoke((MethodInvoker)delegate { failedLogin.Visible = true; });
             }
             ).Start();
         }
@@ -439,5 +461,15 @@ namespace Main
         #endregion
 
         #endregion
+
+        private void RememberMeLabel_Click(object sender, EventArgs e)
+        {
+            rememberMeCheckBox.Checked = !rememberMeCheckBox.Checked;
+        }
+
+        private void AutoLoginLabel_Click(object sender, EventArgs e)
+        {
+            autoLoginCheckBox.Checked = !autoLoginCheckBox.Checked;
+        }
     }
 }

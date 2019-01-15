@@ -1,10 +1,7 @@
-﻿using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Drawing;
 
 /// <summary>
 /// Network Types - ONLY FOR SERVER COMMUNICATION, DO NOT SEND SENSITIVE DATA
@@ -15,7 +12,6 @@ namespace NetworkTypes
     public class Request
     {
         public string Command;
-        public string SubCommand;
         public Token Token = null;
         public object Object = 0;
 
@@ -27,22 +23,12 @@ namespace NetworkTypes
         public Request(string Command, object Object = null)
         {
             this.Command = Command;
-            this.SubCommand = "";
             this.Object = Object != null ? Object : 0;
         }
 
         public Request(string Command, Token Token, object Object = null)
         {
             this.Command = Command;
-            this.SubCommand = "";
-            this.Token = Token;
-            this.Object = Object != null ? Object : 0;
-        }
-
-        public Request(string Command, string SubCommand, Token Token = null, object Object = null)
-        {
-            this.Command = Command;
-            this.SubCommand = SubCommand;
             this.Token = Token;
             this.Object = Object != null ? Object : 0;
         }
@@ -53,16 +39,18 @@ namespace NetworkTypes
     {
         public string Message;
         public object Object = 0;
+        public bool Error = false;
 
         public Response()
         {
 
         }
 
-        public Response(string Message, object Object = null)
+        public Response(string Message, object Object = null, bool Error = false)
         {
             this.Message = Message;
             this.Object = Object != null ? Object : 0;
+            this.Error = Error;
         }
     }
 
@@ -110,45 +98,36 @@ namespace NetworkTypes
     [Serializable]
     public class Token
     {
-        public string IP;
-        public int ID;
-        public string Username;
+        public Member Member;
+
         public string AuthToken;
-        public string LastDevice;
-        public DateTime LastRequest;
-        public DateTime CreationDate;
 
-        public Token()
+        public Token(Member Member, string AuthToken)
         {
-
-        }
-
-        public Token(string IP, int ID, string Username, string AuthToken)
-        {
-            this.IP = IP;
-            this.ID = ID;
-            this.Username = Username;
+            this.Member = Member;
             this.AuthToken = AuthToken;
-            this.LastRequest = DateTime.Now;
-            this.CreationDate = DateTime.Now;
         }
+    }
 
-        public Token(string IP, int ID, string Username, string LastDevice, string AuthToken)
+    [Serializable]
+    public class Member
+    {
+        public string Username;
+
+        public Image Avatar;
+
+        public Member(string Username, Image Avatar)
         {
-            this.IP = IP;
-            this.ID = ID;
             this.Username = Username;
-            this.AuthToken = AuthToken;
-            this.LastDevice = LastDevice == null ? "" : LastDevice;
-            this.LastRequest = DateTime.Now;
-            this.CreationDate = DateTime.Now;
+
+            this.Avatar = Avatar;
         }
     }
 
     /// <summary>
     /// Product (Recieve/Send)
     /// </summary>
-    [Serializable]
+   [Serializable]
     public class Product
     {
         public int Id; //UID
@@ -182,25 +161,6 @@ namespace NetworkTypes
             this.Internal = Internal;
 
             this.Image = TryReadProductImage();
-        }
-
-        //Get Rid of
-        public Product SetFromSQL(MySqlDataReader reader)
-        {
-            Id = reader.GetInt32(0);
-            Group = reader.GetInt32(1);
-            Name = reader.GetString(2);
-            File = reader.GetString(3);
-            ProcessName = reader.GetString(4);
-            Status = reader.GetInt32(5);
-            Version = reader.GetInt32(6);
-            Free = reader.GetInt32(7);
-            AutoLaunchMem = reader.GetInt64(8);
-            Internal = (reader.GetInt32(9) == 1) ? true : false;
-
-            this.Image = TryReadProductImage();
-
-            return this;
         }
 
         //Get rid of
@@ -294,16 +254,6 @@ namespace NetworkTypes
             this.Title = Title;
             this.Message = Message;
             this.CreationDate = CreationDate;
-        }
-
-        //Get rid of
-        public Notification(MySqlDataReader reader)
-        {
-            //Get Notification Base Stats
-            ID = reader.GetInt32(0);
-            Title = reader.GetString(1);
-            Message = reader.GetString(2);
-            CreationDate = reader.GetDateTime(3);
         }
     }
 }

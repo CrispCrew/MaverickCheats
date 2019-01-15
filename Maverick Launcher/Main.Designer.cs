@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using System;
+using System.Windows.Forms;
 
 namespace Main
 {
@@ -37,8 +38,9 @@ namespace Main
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.bunifuElipse1 = new ns1.BunifuElipse(this.components);
             this.sideBar = new System.Windows.Forms.Panel();
-            this.memberUsername = new ns1.BunifuCustomLabel();
+            this.panel1 = new System.Windows.Forms.Panel();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+            this.memberUsername = new ns1.BunifuCustomLabel();
             this.memberAvatar = new ns1.BunifuImageButton();
             this.slidingPanel = new ns1.BunifuImageButton();
             this.topBar = new System.Windows.Forms.Panel();
@@ -51,15 +53,17 @@ namespace Main
             this.bunifuDragControl1 = new ns1.BunifuDragControl(this.components);
             this.bunifuTransition2 = new BunifuAnimatorNS.BunifuTransition(this.components);
             this.bunifuTransition3 = new BunifuAnimatorNS.BunifuTransition(this.components);
-            this.panel1 = new System.Windows.Forms.Panel();
+            this.bunifuCustomLabel1 = new ns1.BunifuCustomLabel();
+            this.bunifuCustomLabel2 = new ns1.BunifuCustomLabel();
+            this.BugReport = new ns1.BunifuCustomLabel();
             this.sideBar.SuspendLayout();
+            this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.memberAvatar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.slidingPanel)).BeginInit();
             this.topBar.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.ShowLogs)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.loading)).BeginInit();
             this.MainPanel.SuspendLayout();
-            this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
             // bunifuElipse1
@@ -83,22 +87,18 @@ namespace Main
             this.sideBar.Name = "sideBar";
             this.sideBar.Size = new System.Drawing.Size(300, 568);
             this.sideBar.TabIndex = 0;
+            this.sideBar.MouseWheel += SideBar_MouseWheel;
             // 
-            // memberUsername
+            // panel1
             // 
-            this.memberUsername.BackColor = System.Drawing.Color.Transparent;
-            this.bunifuTransition3.SetDecoration(this.memberUsername, BunifuAnimatorNS.DecorationType.None);
-            this.bunifuTransition2.SetDecoration(this.memberUsername, BunifuAnimatorNS.DecorationType.None);
-            this.bunifuTransition1.SetDecoration(this.memberUsername, BunifuAnimatorNS.DecorationType.None);
-            this.memberUsername.Font = new System.Drawing.Font("Calibri", 14F);
-            this.memberUsername.ForeColor = System.Drawing.Color.White;
-            this.memberUsername.Location = new System.Drawing.Point(98, 105);
-            this.memberUsername.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.memberUsername.Name = "memberUsername";
-            this.memberUsername.Size = new System.Drawing.Size(96, 28);
-            this.memberUsername.TabIndex = 7;
-            this.memberUsername.Text = "Username";
-            this.memberUsername.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.panel1.Controls.Add(this.flowLayoutPanel1);
+            this.bunifuTransition1.SetDecoration(this.panel1, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition2.SetDecoration(this.panel1, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition3.SetDecoration(this.panel1, BunifuAnimatorNS.DecorationType.None);
+            this.panel1.Location = new System.Drawing.Point(0, 150);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(300, 415);
+            this.panel1.TabIndex = 9;
             // 
             // flowLayoutPanel1
             // 
@@ -111,6 +111,22 @@ namespace Main
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
             this.flowLayoutPanel1.Size = new System.Drawing.Size(300, 432);
             this.flowLayoutPanel1.TabIndex = 3;
+            // 
+            // memberUsername
+            // 
+            this.memberUsername.BackColor = System.Drawing.Color.Transparent;
+            this.bunifuTransition3.SetDecoration(this.memberUsername, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition2.SetDecoration(this.memberUsername, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition1.SetDecoration(this.memberUsername, BunifuAnimatorNS.DecorationType.None);
+            this.memberUsername.Font = new System.Drawing.Font("Calibri", 14F);
+            this.memberUsername.ForeColor = System.Drawing.Color.White;
+            this.memberUsername.Location = new System.Drawing.Point(69, 105);
+            this.memberUsername.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.memberUsername.Name = "memberUsername";
+            this.memberUsername.Size = new System.Drawing.Size(148, 28);
+            this.memberUsername.TabIndex = 7;
+            this.memberUsername.Text = "Username";
+            this.memberUsername.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // memberAvatar
             // 
@@ -211,7 +227,7 @@ namespace Main
             this.Title.Name = "Title";
             this.Title.Size = new System.Drawing.Size(182, 40);
             this.Title.TabIndex = 0;
-            this.Title.Text = "MaverickCheats";
+            this.Title.Text = "MaverickCheats - v";
             this.Title.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // bunifuTransition1
@@ -271,6 +287,9 @@ namespace Main
             // 
             // MainPanel
             // 
+            this.MainPanel.Controls.Add(this.BugReport);
+            this.MainPanel.Controls.Add(this.bunifuCustomLabel2);
+            this.MainPanel.Controls.Add(this.bunifuCustomLabel1);
             this.MainPanel.Controls.Add(this.launchButton);
             this.bunifuTransition1.SetDecoration(this.MainPanel, BunifuAnimatorNS.DecorationType.None);
             this.bunifuTransition2.SetDecoration(this.MainPanel, BunifuAnimatorNS.DecorationType.None);
@@ -336,16 +355,54 @@ namespace Main
             this.bunifuTransition3.MaxAnimationTime = 5000;
             this.bunifuTransition3.TimeStep = 0.01F;
             // 
-            // panel1
+            // bunifuCustomLabel1
             // 
-            this.panel1.Controls.Add(this.flowLayoutPanel1);
-            this.bunifuTransition1.SetDecoration(this.panel1, BunifuAnimatorNS.DecorationType.None);
-            this.bunifuTransition2.SetDecoration(this.panel1, BunifuAnimatorNS.DecorationType.None);
-            this.bunifuTransition3.SetDecoration(this.panel1, BunifuAnimatorNS.DecorationType.None);
-            this.panel1.Location = new System.Drawing.Point(0, 150);
-            this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(300, 415);
-            this.panel1.TabIndex = 9;
+            this.bunifuCustomLabel1.BackColor = System.Drawing.Color.Transparent;
+            this.bunifuTransition3.SetDecoration(this.bunifuCustomLabel1, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition2.SetDecoration(this.bunifuCustomLabel1, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition1.SetDecoration(this.bunifuCustomLabel1, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuCustomLabel1.Font = new System.Drawing.Font("Arial", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.bunifuCustomLabel1.ForeColor = System.Drawing.Color.White;
+            this.bunifuCustomLabel1.Location = new System.Drawing.Point(1, 43);
+            this.bunifuCustomLabel1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.bunifuCustomLabel1.Name = "bunifuCustomLabel1";
+            this.bunifuCustomLabel1.Size = new System.Drawing.Size(654, 29);
+            this.bunifuCustomLabel1.TabIndex = 7;
+            this.bunifuCustomLabel1.Text = "This is a BETA Launcher, Report Bugs to us so we can fix them.";
+            this.bunifuCustomLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // bunifuCustomLabel2
+            // 
+            this.bunifuCustomLabel2.BackColor = System.Drawing.Color.Transparent;
+            this.bunifuTransition3.SetDecoration(this.bunifuCustomLabel2, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition2.SetDecoration(this.bunifuCustomLabel2, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition1.SetDecoration(this.bunifuCustomLabel2, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuCustomLabel2.Font = new System.Drawing.Font("Arial", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.bunifuCustomLabel2.ForeColor = System.Drawing.Color.White;
+            this.bunifuCustomLabel2.Location = new System.Drawing.Point(1, 72);
+            this.bunifuCustomLabel2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.bunifuCustomLabel2.Name = "bunifuCustomLabel2";
+            this.bunifuCustomLabel2.Size = new System.Drawing.Size(654, 29);
+            this.bunifuCustomLabel2.TabIndex = 8;
+            this.bunifuCustomLabel2.Text = "Click the Link below to send a Bug Report";
+            this.bunifuCustomLabel2.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // BugReport
+            // 
+            this.BugReport.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.bunifuTransition3.SetDecoration(this.BugReport, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition2.SetDecoration(this.BugReport, BunifuAnimatorNS.DecorationType.None);
+            this.bunifuTransition1.SetDecoration(this.BugReport, BunifuAnimatorNS.DecorationType.None);
+            this.BugReport.Font = new System.Drawing.Font("Segoe UI", 10F, ((System.Drawing.FontStyle)((System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Underline))));
+            this.BugReport.ForeColor = System.Drawing.Color.White;
+            this.BugReport.Location = new System.Drawing.Point(292, 101);
+            this.BugReport.Name = "BugReport";
+            this.BugReport.Size = new System.Drawing.Size(97, 28);
+            this.BugReport.TabIndex = 19;
+            this.BugReport.Text = "Report Bugs";
+            this.BugReport.Click += new System.EventHandler(this.BugReport_Click);
+            this.BugReport.MouseEnter += new System.EventHandler(this.BugReport_MouseEnter);
+            this.BugReport.MouseLeave += new System.EventHandler(this.BugReport_MouseLeave);
             // 
             // Main
             // 
@@ -365,18 +422,22 @@ namespace Main
             this.Text = " ";
             this.Load += new System.EventHandler(this.Main_Load);
             this.sideBar.ResumeLayout(false);
+            this.panel1.ResumeLayout(false);
+            this.panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.memberAvatar)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.slidingPanel)).EndInit();
             this.topBar.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.ShowLogs)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.loading)).EndInit();
             this.MainPanel.ResumeLayout(false);
-            this.panel1.ResumeLayout(false);
-            this.panel1.PerformLayout();
             this.ResumeLayout(false);
 
         }
 
+        private void SideBar_MouseWheel1(object sender, MouseEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
         #endregion
 
         private ns1.BunifuElipse bunifuElipse1;
@@ -396,6 +457,9 @@ namespace Main
         private ns1.BunifuImageButton memberAvatar;
         private BunifuAnimatorNS.BunifuTransition bunifuTransition3;
         private Panel panel1;
+        private ns1.BunifuCustomLabel bunifuCustomLabel2;
+        private ns1.BunifuCustomLabel bunifuCustomLabel1;
+        private ns1.BunifuCustomLabel BugReport;
     }
 }
 

@@ -10,6 +10,11 @@ namespace Main
     public class Cache
     {
         /// <summary>
+        /// Client Version
+        /// </summary>
+        public static string Version = "";
+
+        /// <summary>
         /// OAUth Instances
         /// </summary>
         public static List<OAuth> OAuths = new List<OAuth>();

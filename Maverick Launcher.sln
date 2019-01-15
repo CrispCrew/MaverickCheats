@@ -16,6 +16,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetworkTypes", "NetworkTypes\NetworkTypes.csproj", "{0283EB73-320C-4DF6-A1EA-05F762DFB96F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Updater", "Updater\Updater.csproj", "{C0D7CB27-73B5-42CF-B93B-AD78431DED8A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0283EB73-320C-4DF6-A1EA-05F762DFB96F} = {0283EB73-320C-4DF6-A1EA-05F762DFB96F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
