@@ -33,7 +33,7 @@ namespace Main
 
             //Listener Events for Assembly Resolve and Unhandled Exceptions
             AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
-            //AppDomain.CurrentDomain.UnhandledException += (sender, arg) => HandleUnhandledException(arg.ExceptionObject as Exception);
+            AppDomain.CurrentDomain.UnhandledException += (sender, arg) => HandleUnhandledException(arg.ExceptionObject as Exception);
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -43,6 +43,11 @@ namespace Main
         public static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
         {
             return EmbeddedResource.Get(args.Name);
+        }
+
+        public static void HandleUnhandledException(Exception ex)
+        {
+            Logs.LogEntries.Add("Exception: " + ex.ToString());
         }
     }
 }

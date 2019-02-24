@@ -318,6 +318,7 @@ namespace Main
             this.ShowLogs.TabIndex = 17;
             this.ShowLogs.TabStop = false;
             this.ShowLogs.Zoom = 10;
+            this.ShowLogs.Click += new System.EventHandler(this.ShowLogs_Click);
             // 
             // bunifuImageButton3
             // 

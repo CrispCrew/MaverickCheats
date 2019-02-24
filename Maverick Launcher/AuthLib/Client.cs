@@ -32,17 +32,17 @@ namespace Main.AuthLib
         public Client()
         {
             //Console Title
-            Console.Title = "Maverick Logs";
+            //Console.Title = "Maverick Logs";
 
             //Log Init
-            Console.WriteLine("Logging Init");
+            Logs.LogEntries.Add("Logging Init");
 
             //Establish Server Connection
-            Console.WriteLine("Client Started");
+            Logs.LogEntries.Add("Client Started");
 
             Connect();
 
-            Console.WriteLine("Client Socket Program - Server Connected ...");
+            Logs.LogEntries.Add("Client Socket Program - Server Connected ...");
         }
 
         /// <summary>
@@ -56,13 +56,13 @@ namespace Main.AuthLib
 
                 clientSocket.Connect("94.23.27.204", 6060);
 
-                Console.WriteLine("Socket Connected");
+                Logs.LogEntries.Add("Socket Connected");
 
                 return true;
             }
             catch
             {
-                Console.WriteLine("Socket Disconnected");
+                Logs.LogEntries.Add("Socket Disconnected");
 
                 return false;
             }
@@ -73,7 +73,7 @@ namespace Main.AuthLib
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            Console.WriteLine("Starting Request");
+            Logs.LogEntries.Add("Starting Request");
 
             Request message = new Request("Version");
 
@@ -81,17 +81,17 @@ namespace Main.AuthLib
 
             serverStream = clientSocket.GetStream(); // the stream 
 
-            Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
             formatter.Serialize(serverStream, message); // the serialization process 
 
-            Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
             Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
-            Console.WriteLine("Response Recieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Response Recieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Console.WriteLine("Recieved: " + r.Message);
+            Logs.LogEntries.Add("Recieved: " + r.Message);
 
             return (string)r.Object;
         }
@@ -101,7 +101,7 @@ namespace Main.AuthLib
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            Console.WriteLine("Starting Request");
+            Logs.LogEntries.Add("Starting Request");
 
             Request message = new Request("Updater");
 
@@ -109,17 +109,17 @@ namespace Main.AuthLib
 
             serverStream = clientSocket.GetStream(); // the stream 
 
-            Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
             formatter.Serialize(serverStream, message); // the serialization process 
 
-            Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
             Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
-            Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Console.WriteLine("Recieved: " + r.Message);
+            Logs.LogEntries.Add("Recieved: " + r.Message);
 
             stopwatch.Stop();
 
@@ -131,7 +131,7 @@ namespace Main.AuthLib
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            Console.WriteLine("Starting Request");
+            Logs.LogEntries.Add("Starting Request");
 
             Request message = new Request("Update");
 
@@ -139,17 +139,17 @@ namespace Main.AuthLib
 
             serverStream = clientSocket.GetStream(); // the stream 
 
-            Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
             formatter.Serialize(serverStream, message); // the serialization process 
 
-            Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
             Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
-            Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Console.WriteLine("Recieved: " + r.Message);
+            Logs.LogEntries.Add("Recieved: " + r.Message);
 
             stopwatch.Stop();
 
@@ -161,7 +161,7 @@ namespace Main.AuthLib
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            Console.WriteLine("Starting Request");
+            Logs.LogEntries.Add("Starting Request");
 
             Request message = new Request("Login", null, new NetworkTypes.Login(Username, Password, HWID));
 
@@ -169,17 +169,17 @@ namespace Main.AuthLib
 
             serverStream = clientSocket.GetStream(); // the stream 
 
-            Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
             formatter.Serialize(serverStream, message); // the serialization process 
 
-            Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
             Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
-            Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Console.WriteLine("Recieved: " + r.Message);
+            Logs.LogEntries.Add("Recieved: " + r.Message);
 
             if (r.Error == false)
                 if (r.Object is Token)
@@ -209,7 +209,7 @@ namespace Main.AuthLib
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            Console.WriteLine("Starting Request");
+            Logs.LogEntries.Add("Starting Request");
 
             Request message = new Request("OAuth", new NetworkTypes.OAuth(PrivateKey, ""));
 
@@ -217,17 +217,17 @@ namespace Main.AuthLib
 
             serverStream = clientSocket.GetStream(); // the stream 
 
-            Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
             formatter.Serialize(serverStream, message); // the serialization process 
 
-            Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
             Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
-            Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Console.WriteLine("Recieved: " + r.Message);
+            Logs.LogEntries.Add("Recieved: " + r.Message);
 
             if (r.Error == false)
                 if (r.Object is Token)
@@ -253,7 +253,7 @@ namespace Main.AuthLib
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            Console.WriteLine("Starting Request");
+            Logs.LogEntries.Add("Starting Request");
 
             Request message = new Request("Products", token);
 
@@ -261,17 +261,17 @@ namespace Main.AuthLib
 
             serverStream = clientSocket.GetStream(); // the stream 
 
-            Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
             formatter.Serialize(serverStream, message); // the serialization process 
 
-            Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
             Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
-            Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Console.WriteLine("Recieved: " + r.Message);
+            Logs.LogEntries.Add("Recieved: " + r.Message);
 
             stopwatch.Stop();
 
@@ -283,7 +283,7 @@ namespace Main.AuthLib
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
-            Console.WriteLine("Starting Request");
+            Logs.LogEntries.Add("Starting Request");
 
             Request message = new Request("Download", token, product);
 
@@ -291,17 +291,17 @@ namespace Main.AuthLib
 
             serverStream = clientSocket.GetStream(); // the stream 
 
-            Console.WriteLine("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Stream Instance Obtained - " + stopwatch.Elapsed.TotalMilliseconds);
 
             formatter.Serialize(serverStream, message); // the serialization process 
 
-            Console.WriteLine("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Request Sent and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
             Response r = (Response)formatter.Deserialize(serverStream); // you have to cast the deserialized object 
 
-            Console.WriteLine("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
+            Logs.LogEntries.Add("Response Reciieved and Serialized - " + stopwatch.Elapsed.TotalMilliseconds);
 
-            Console.WriteLine("Recieved: " + r.Message);
+            Logs.LogEntries.Add("Recieved: " + r.Message);
 
             stopwatch.Stop();
 

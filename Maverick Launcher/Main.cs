@@ -49,6 +49,8 @@ namespace Main
 
         private void Main_Load(object sender, EventArgs e)
         {
+            this.sideBar.MouseWheel += SideBar_MouseWheel;
+
             new Thread(() =>
             {
                 this.BeginInvoke((MethodInvoker)delegate { bunifuTransition3.ShowSync(loading); });
@@ -57,7 +59,7 @@ namespace Main
 
                 foreach (Product product in products)
                 {
-                    Console.WriteLine(product.Id + ", " + product.Name + "," + product.Image.LongLength);
+                    Logs.LogEntries.Add(product.Id + ", " + product.Name + "," + product.Image.LongLength);
 
                     BunifuFlatButton CheatListTab = new BunifuFlatButton();
                     CheatListTab.Tag = product.Id;
@@ -130,13 +132,16 @@ namespace Main
         {
             new Thread(() =>
             {
+                if (!flowLayoutPanel1.Controls.Cast<BunifuFlatButton>().ToList().Any(control => control.selected))
+                    return;
+
                 int buttonIndex = (int)flowLayoutPanel1.Controls.Cast<BunifuFlatButton>().ToList().Find(control => control.selected).Tag;
 
-                Console.WriteLine("Selected Index = " + buttonIndex);
+                Logs.LogEntries.Add("Selected Index = " + buttonIndex);
 
                 Product product = products.Find(temp_product => temp_product.Id == buttonIndex);
 
-                Console.WriteLine("Product ID: " + product.Id + ", " + product.Name);
+                Logs.LogEntries.Add("Product ID: " + product.Id + ", " + product.Name);
 
                 if (product.Id <= 0 || product.Name == null || product.File == null || product.ProcessName == null)
                     return;
@@ -162,7 +167,7 @@ namespace Main
                     }
                 }
 
-                this.TopMost = false;
+                this.BeginInvoke((MethodInvoker)delegate { this.TopMost = false; });
 
                 MemoryStream download = client.Download(token, product);
 
@@ -180,9 +185,9 @@ namespace Main
                     }
                     catch (Exception ex)
                     {
-                        try { Process.GetProcessesByName("run").ToList().ForEach(process => process.Kill()); } catch (Exception ex2) { MessageBox.Show("Failed to Terminate run.exe, run.exe is being used and cannot be redownloaded or updated!"); Console.WriteLine(ex2.ToString()); }
+                        try { Process.GetProcessesByName("run").ToList().ForEach(process => process.Kill()); } catch (Exception ex2) { MessageBox.Show("Failed to Terminate run.exe, run.exe is being used and cannot be redownloaded or updated!"); Logs.LogEntries.Add(ex2.ToString()); }
 
-                        Console.WriteLine("[" + ((Process.GetProcessesByName("run.exe").ToList().Count > 0) ? "HANDLED" : "UNHANDLED") + " ERROR]:\n" + ex.ToString());
+                        Logs.LogEntries.Add("[" + ((Process.GetProcessesByName("run.exe").ToList().Count > 0) ? "HANDLED" : "UNHANDLED") + " ERROR]:\n" + ex.ToString());
                     }
 
                     Thread.Sleep(500);
@@ -198,7 +203,7 @@ namespace Main
                 archive.ExtractToDirectory(Environment.CurrentDirectory + "\\" + product.Name + "\\");
                 archive.Dispose();
 
-                Console.WriteLine("Cheat Preloaded - Waiting 120s to Auto Inject");
+                Logs.LogEntries.Add("Cheat Preloaded - Waiting 120s to Auto Inject");
 
                 //Check if Process has loaded enough memory that we can likely load successfuly
                 if (File.Exists(Environment.CurrentDirectory + "\\" + product.Name + "\\run.exe"))
@@ -208,7 +213,7 @@ namespace Main
                     File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name, FileAttributes.Normal);
 
                     //Start Cheat
-                    Console.WriteLine("Starting Cheat");
+                    Logs.LogEntries.Add("Starting Cheat");
 
                     Process process = new Process();
 
@@ -225,9 +230,9 @@ namespace Main
                     process.StartInfo = startInfo;
                     process.Start();
 
-                    //Console.WriteLine(process.StandardOutput.ReadToEnd());
+                    //Logs.LogEntries.Add(process.StandardOutput.ReadToEnd());
 
-                    Console.WriteLine("Started Cheat");
+                    Logs.LogEntries.Add("Started Cheat");
 
                     //Handle File Attributes
                     File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name + "\\run.exe", FileAttributes.Hidden | FileAttributes.System);
@@ -265,7 +270,7 @@ namespace Main
         #region Event Handlers - Front End
         private void ShowLogs_Click(object sender, EventArgs e)
         {
-
+            new Logs().ShowDialog();
         }
 
         #region Sliding Panel Events
@@ -396,6 +401,16 @@ namespace Main
         private void BugReport_Click(object sender, EventArgs e)
         {
             Process.Start("https://maverickcheats.eu/community/forum/23-bug-report/");
+        }
+
+        private void Main_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Environment.Exit(0);
+        }
+
+        private void memberAvatar_Click(object sender, EventArgs e)
+        {
+            Process.Start("https://maverickcheats.eu/community/profile/" + token.Member.Username);
         }
     }
 }

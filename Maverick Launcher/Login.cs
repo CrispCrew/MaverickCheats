@@ -18,7 +18,7 @@ namespace Main
     {
         public Client client = new Client();
 
-        public static string Version = "0.05.1";
+        public static string Version = "0.06.2";
 
         public static Token token;
 
@@ -29,7 +29,7 @@ namespace Main
 
             pictureBox1.Image = Image.FromStream(new MemoryStream(EmbeddedResource.EmbeddedResources.First(resource => resource.Key == "Spinner.gif").Value));
 
-            Console.WriteLine("Form Loaded");
+            Logs.LogEntries.Add("Form Loaded");
 
             Title.Text += Version;
         }
@@ -42,7 +42,7 @@ namespace Main
             new Thread(() =>
             {
                 this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = true; });
-
+                    
                 if (Version != client.Version())
                 {
                     MessageBox.Show("Updating! - 'Updater.exe'");
@@ -53,7 +53,7 @@ namespace Main
                         try { process.CloseMainWindow(); process.Close(); process.Kill(); } catch { }
 
                     //Starting Updates
-                    Console.WriteLine("Starting Update Protocol");
+                    Logs.LogEntries.Add("Starting Update Protocol");
 
                     //Extract the Update and only get the Updater.exe
                     using (ZipArchive archive = new ZipArchive(client.Updater(), ZipArchiveMode.Read))
@@ -61,17 +61,17 @@ namespace Main
                         foreach (ZipArchiveEntry file in archive.Entries)
                         {
                             if (File.Exists(Environment.CurrentDirectory + "\\" + file.Name))
-                                try { File.Delete(Environment.CurrentDirectory + "\\" + file.Name); } catch (Exception ex) { Console.WriteLine("Failed to Delete the File: " + file.FullName + "\nERROR:\n" + ex.ToString()); continue; }
+                                try { File.Delete(Environment.CurrentDirectory + "\\" + file.Name); } catch (Exception ex) { Logs.LogEntries.Add("Failed to Delete the File: " + file.FullName + "\nERROR:\n" + ex.ToString()); continue; }
 
                             file.ExtractToFile(Environment.CurrentDirectory + "\\" + file.Name);
 
-                            Console.WriteLine("Extracting File: " + file.Name);
+                            Logs.LogEntries.Add("Extracting File: " + file.Name);
                         }
                     }
 
                     if (File.Exists(Environment.CurrentDirectory + "\\Updater.exe"))
                     {
-                        Console.WriteLine("Updater Executable Found!");
+                        Logs.LogEntries.Add("Updater Executable Found!");
 
                         Process process = new Process();
                         ProcessStartInfo startInfo = new ProcessStartInfo()
@@ -89,7 +89,7 @@ namespace Main
                     }
                     else
                     {
-                        Console.WriteLine("AutoUpdater Executable Missing! -> Recovery: Trying to download AutoUpdater");
+                        Logs.LogEntries.Add("AutoUpdater Executable Missing! -> Recovery: Trying to download AutoUpdater");
 
                         goto retry;
                     }
@@ -114,7 +114,7 @@ namespace Main
                         return;
                     }
 
-                    Console.WriteLine("Loading AutoLogin Data");
+                    Logs.LogEntries.Add("Loading AutoLogin Data");
 
                     //Load Config
                     StreamReader sr = new StreamReader("autologin.data");
@@ -127,15 +127,18 @@ namespace Main
                     sr.Dispose();
 
                     //Setup Decryption...etc
-                    this.BeginInvoke((MethodInvoker)delegate { rememberMeCheckBox.Checked = !Convert.ToBoolean(useAutoLogin); });
-                    this.BeginInvoke((MethodInvoker)delegate { autoLoginCheckBox.Checked = Convert.ToBoolean(useAutoLogin); });
+                    this.BeginInvoke((MethodInvoker)delegate
+                    {
+                        rememberMeCheckBox.Checked = !Convert.ToBoolean(useAutoLogin);
+                        autoLoginCheckBox.Checked = Convert.ToBoolean(useAutoLogin);
+                    });
 
-                    Console.WriteLine("Decrypting AutoLogin Data");
+                    Logs.LogEntries.Add("Decrypting AutoLogin Data");
 
                     userHash = Encryption.decrypt(userHash);
                     pwHash = Encryption.decrypt(pwHash);
 
-                    Console.WriteLine("Decrypted AutoLogin Data");
+                    Logs.LogEntries.Add("Decrypted AutoLogin Data");
 
                     if (userHash == "" || pwHash == "")
                     {
@@ -147,7 +150,7 @@ namespace Main
                             Password.Text = "Password";
                         });
 
-                        Console.WriteLine("Username and Password are not included in the AutoLogin File!");
+                        Logs.LogEntries.Add("Username and Password are not included in the AutoLogin File!");
                     }
                     else
                     {
@@ -169,11 +172,14 @@ namespace Main
                         {
                             token = TempToken;
 
-                            Console.WriteLine("Login Found-" + token.AuthToken);
+                            Logs.LogEntries.Add("Login Found-" + token.AuthToken);
 
-                            this.BeginInvoke((MethodInvoker)delegate { new Main(client, token).Show(); });
+                            this.BeginInvoke((MethodInvoker)delegate
+                            {
+                                new Main(client, token).Show();
 
-                            this.BeginInvoke((MethodInvoker)delegate { Hide(); });
+                                Hide();
+                            });
                         }
                         else
                         {
@@ -187,9 +193,9 @@ namespace Main
                     #region Forum Login
                     else if (Convert.ToBoolean(useAutoLogin) && Convert.ToBoolean(forumLogin))
                     {
-                        Console.WriteLine("Attempting to AutoLogin with OAuth");
+                        Logs.LogEntries.Add("Attempting to AutoLogin with OAuth");
 
-                        Console.WriteLine("Attempting to AutoLogin with OAuth");
+                        Logs.LogEntries.Add("Attempting to AutoLogin with OAuth");
 
                         string PrivateKey = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("+", "").Replace("=", "").Replace(@"/", "");
 
@@ -201,11 +207,14 @@ namespace Main
                         {
                             if (client.OAuth_Finish(PrivateKey, ref token, ref Error))
                             {
-                                Console.WriteLine("Login Found-" + token.AuthToken);
+                                Logs.LogEntries.Add("Login Found-" + token.AuthToken);
 
-                                this.BeginInvoke((MethodInvoker)delegate { new Main(client, token).Show(); });
+                                this.BeginInvoke((MethodInvoker)delegate
+                                {
+                                    new Main(client, token).Show();
 
-                                this.BeginInvoke((MethodInvoker)delegate { Hide(); });
+                                    Hide();
+                                });
 
                                 break;
                             }
@@ -222,10 +231,13 @@ namespace Main
                     #endregion
                     else
                     {
-                        rememberMeCheckBox.Checked = true;
+                        this.BeginInvoke((MethodInvoker)delegate
+                        {
+                            rememberMeCheckBox.Checked = true;
 
-                        Username.Text = userHash;
-                        Password.Text = pwHash;
+                            Username.Text = userHash;
+                            Password.Text = pwHash;
+                        });
                     }
                 }
 
@@ -313,7 +325,7 @@ namespace Main
             {
                 this.BeginInvoke((MethodInvoker)delegate { bunifuTransition2.ShowSync(pictureBox1);  /*pictureBox1.Visible = true;*/ });
 
-                Console.WriteLine("Attempting to AutoLogin with OAuth");
+                Logs.LogEntries.Add("Attempting to AutoLogin with OAuth");
 
                 string PrivateKey = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("+", "").Replace("=", "").Replace(@"/", "");
 
@@ -325,7 +337,7 @@ namespace Main
                 {
                     if (client.OAuth_Finish(PrivateKey, ref token, ref Error))
                     {
-                        Console.WriteLine("Login Found-" + token.AuthToken);
+                        Logs.LogEntries.Add("Login Found-" + token.AuthToken);
 
                         //Check if Either is Enabled or Disabled
                         if (File.Exists("autologin.data"))
@@ -470,6 +482,11 @@ namespace Main
         private void AutoLoginLabel_Click(object sender, EventArgs e)
         {
             autoLoginCheckBox.Checked = !autoLoginCheckBox.Checked;
+        }
+
+        private void ShowLogs_Click(object sender, EventArgs e)
+        {
+            new Logs().ShowDialog();
         }
     }
 }

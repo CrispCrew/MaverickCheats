@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,6 +14,16 @@ namespace Main
         /// Client Version
         /// </summary>
         public static string Version = "";
+
+        /// <summary>
+        /// TCP Instances
+        /// </summary>
+        public static List<TCP_Connection> TCP_Connections = new List<TCP_Connection>();
+
+        /// <summary>
+        /// HTTP Instances
+        /// </summary>
+        public static List<HTTP_Connection> HTTP_Connections = new List<HTTP_Connection>();
 
         /// <summary>
         /// OAUth Instances
@@ -38,10 +49,5 @@ namespace Main
         /// Notification Cache
         /// </summary>
         public static List<Notification> Notifications = new List<Notification>();
-
-        /// <summary>
-        /// OAuth Cache
-        /// </summary>
-        //public static List<OAuth> OAuth = new List<OAuth>();
     }
 }

@@ -15,6 +15,7 @@ using System.Net;
 using System.Text;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Web;
 
 namespace Main
 {
@@ -23,6 +24,14 @@ namespace Main
         public Main()
         {
             InitializeComponent();
+
+            //Listener Events for Unhandled Exceptions
+            AppDomain.CurrentDomain.UnhandledException += (sender, arg) => HandleUnhandledException(arg.ExceptionObject as Exception);
+        }
+
+        private void HandleUnhandledException(Exception ex)
+        {
+            this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText(ex.ToString() + Environment.NewLine); this.textBox1.Refresh(); });
         }
 
         private void Main_Load(object sender, EventArgs e)
@@ -71,6 +80,78 @@ namespace Main
 
                 connect.Close();
 
+                List<HTTP_Connection> HTTP_Connections_Temp;
+
+                lock (Cache.HTTP_Connections)
+                {
+                    HTTP_Connections_Temp = new List<HTTP_Connection>(Cache.HTTP_Connections);
+
+                    foreach (HTTP_Connection connection in HTTP_Connections_Temp.Where(Connection => Connection == null || Connection.HttpListenerContext == null || Connection.Exited || Connection.LastRequestDate.AddMinutes(5) < DateTime.Now))
+                    {
+                        this.BeginInvoke((MethodInvoker)delegate { textBox2.AppendText("Connection: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine); this.textBox2.Refresh(); });
+
+                        try
+                        {
+                            if (connection.Thread != null)
+                            {
+                                connection.Thread.Abort();
+
+                                connection.Thread = null;
+                            }
+
+                            if (connection.HttpListenerContext != null)
+                            {
+                                connection.HttpListenerContext.Response.Close();
+
+                                connection.HttpListenerContext = null;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            this.BeginInvoke((MethodInvoker)delegate { textBox2.AppendText("Disposing HTTP Socket Failed: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine); this.textBox2.Refresh(); });
+                            this.BeginInvoke((MethodInvoker)delegate { textBox2.AppendText("Error: " + ex.ToString() + Environment.NewLine); this.textBox2.Refresh(); });
+                        }
+
+                        Cache.HTTP_Connections.Remove(connection);
+                    }
+                }
+
+                List<TCP_Connection> TCP_Connections_Temp;
+
+                lock (Cache.TCP_Connections)
+                {
+                    TCP_Connections_Temp = new List<TCP_Connection>(Cache.TCP_Connections);
+
+                    foreach (TCP_Connection connection in TCP_Connections_Temp.Where(Connection => Connection == null || Connection.TcpClient == null || !Connection.TcpClient.Connected || Connection.LastRequestDate.AddMinutes(5) < DateTime.Now))
+                    {
+                        this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText("Connection: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine); this.textBox1.Refresh(); });
+
+                        try
+                        {
+                            if (connection.Thread != null)
+                            {
+                                connection.Thread.Abort();
+
+                                connection.Thread = null;
+                            }
+
+                            if (connection.TcpClient != null)
+                            {
+                                connection.TcpClient.Close();
+
+                                connection.TcpClient = null;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText("Disposing Socket Failed: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine); this.textBox1.Refresh(); });
+                            this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText("Error: " + ex.ToString() + Environment.NewLine); this.textBox1.Refresh(); });
+                        }
+
+                        Cache.TCP_Connections.Remove(connection);
+                    }
+                }
+
                 //Remove Tokens
                 List<Token> AuthTokens_Temp;
 
@@ -86,7 +167,33 @@ namespace Main
                     }
                 }
 
-                Thread.Sleep(30000);
+                List<OAuth> OAuth_Temp;
+
+                lock (Cache.OAuths)
+                {
+                    OAuth_Temp = new List<OAuth>(Cache.OAuths);
+
+                    foreach (OAuth OAuth in OAuth_Temp.Where(OAuth => OAuth.CreationDate.AddMinutes(5) < DateTime.Now))
+                    {
+                        Console.WriteLine("OAUth: " + OAuth.Member.UserID + ", " + OAuth.PrivateKey + " is too old. {" + OAuth.CreationDate.ToString() + "}");
+
+                        Cache.OAuths.Remove(OAuth);
+                    }
+                }
+
+                this.BeginInvoke((MethodInvoker)delegate 
+                {
+                    VersionLabel.Text = "Version: " + Cache.Version;
+                    TCPInstancesLabel.Text = "TCP Instances: " + Cache.TCP_Connections.Count;
+                    HTTPInstancesLabel.Text = "HTTP Instances: " + Cache.HTTP_Connections.Count;
+                    OAuthInstancesLabel.Text = "OAuth Instances: " + Cache.OAuths.Count;
+                    AuthTokenInstancesLabel.Text = "AuthToken Instances: " + Cache.AuthTokens.Count;
+                    ProductInstancesLabel.Text = "Number of Products in Cache: " + Cache.Products.Count;
+
+                    this.Refresh();
+                });
+
+                Thread.Sleep(10000);
             }
         }
 
@@ -96,213 +203,136 @@ namespace Main
             listener.Prefixes.Add("http://*:8080/");
             listener.Start();
 
-            //New Ready
             while (true)
             {
-                byte[] Bytes = new byte[] { };
+                Console.WriteLine("Opened HTTP Socket");
 
-                HttpListenerContext context = listener.GetContext();
+                HTTP_Connection connection = new HTTP_Connection(listener.GetContext());
 
-                try
+                connection.Thread = new Thread(() => HTTP_Thread(connection));
+
+                connection.Thread.Start();
+
+                Cache.HTTP_Connections.Add(connection);
+
+                this.BeginInvoke((MethodInvoker)delegate { textBox2.AppendText("Starting HTTP Connection - " + connection.IP + Environment.NewLine); this.textBox2.Refresh(); });
+
+                Thread.Sleep(250);
+            }
+        }
+
+        private void HTTP_Thread(HTTP_Connection connection)
+        {
+            byte[] Bytes = new byte[] { };
+
+            HttpListenerContext context = connection.HttpListenerContext;
+
+            try
+            {
+                connection.LastRequestDate = DateTime.Now;
+
+                Functions.Request request = new Functions.Request(context.Request.Url.Query);
+
+                Console.WriteLine("Request URL: " + request.Data);
+
+                if (context.Request.UserAgent == "Auth")
                 {
-                    Functions.Request request = new Functions.Request(context.Request.Url.Query);
+                    context.Response.ContentType = "application/octet-stream";
 
-                    Console.WriteLine("Request URL: " + request.Data);
-
-                    if (context.Request.UserAgent == "Auth")
+                    if (request.Contains("Request"))
                     {
-                        context.Response.ContentType = "application/octet-stream";
-
-                        if (request.Contains("Request"))
+                        if (request.Get("Request") == "Authenticate")
                         {
-                            if (request.Get("Request") == "Authenticate")
+                            if (request.Contains("Token"))
                             {
-                                if (request.Contains("Token"))
+                                Token token = Token.GetTokenByToken(request.Get("Token"));
+
+                                if (token != null)
                                 {
-                                    Token token = Token.GetTokenByToken(request.Get("Token"));
-
-                                    if (token != null)
+                                    if (request.Contains("ProductID"))
                                     {
-                                        if (request.Contains("ProductID"))
-                                        {
-                                            int ProductID = Convert.ToInt32(request.Get("ProductID"));
+                                        int ProductID = Convert.ToInt32(request.Get("ProductID"));
 
-                                            token.RunningProduct = ProductID;
+                                        token.RunningProduct = ProductID;
 
-                                            Console.WriteLine("RunningProduct Set");
-                                        }
+                                        Console.WriteLine("RunningProduct Set");
+                                    }
 
-                                        if (token.IP == context.Request.RemoteEndPoint.Address.ToString())
-                                        {
-                                            token.LastRequest = DateTime.Now;
+                                    if (token.IP == context.Request.RemoteEndPoint.Address.ToString())
+                                    {
+                                        token.LastRequest = DateTime.Now;
 
-                                            Console.WriteLine("Updated Token Expiry");
+                                        Console.WriteLine("Updated Token Expiry");
 
-                                            Bytes = Encoding.UTF8.GetBytes("Authenticated");
+                                        Bytes = Encoding.UTF8.GetBytes("Authenticated");
 
-                                            Console.WriteLine("Authenticated");
-                                        }
-                                        else
-                                        {
-                                            Bytes = Encoding.UTF8.GetBytes("IP Not Authenticated - " + request.Get("Token") + ", " + context.Request.RemoteEndPoint.Address.ToString());
-
-                                            Console.WriteLine("Not Authenticated");
-                                        }
+                                        Console.WriteLine("Authenticated");
                                     }
                                     else
                                     {
-                                        Bytes = Encoding.UTF8.GetBytes("Token Not Authenticated - " + request.Get("Token") + ", " + context.Request.RemoteEndPoint.Address.ToString());
+                                        Bytes = Encoding.UTF8.GetBytes("IP Not Authenticated - " + request.Get("Token") + ", " + context.Request.RemoteEndPoint.Address.ToString());
 
                                         Console.WriteLine("Not Authenticated");
                                     }
                                 }
-                                else if (Cache.AuthTokens.Any(token => token.IP == context.Request.RemoteEndPoint.Address.ToString()))
-                                {
-                                    Bytes = Encoding.UTF8.GetBytes("Authenticated");
-
-                                    Console.WriteLine("Authenticated");
-                                }
                                 else
                                 {
-                                    Bytes = Encoding.UTF8.GetBytes("Not Authenticated - " + context.Request.RemoteEndPoint.Address.ToString());
+                                    Bytes = Encoding.UTF8.GetBytes("Token Not Authenticated - " + request.Get("Token") + ", " + context.Request.RemoteEndPoint.Address.ToString());
 
                                     Console.WriteLine("Not Authenticated");
                                 }
                             }
-                            else if (request.Get("Request") == "Download")
+                            else if (Cache.AuthTokens.Any(token => token.IP == context.Request.RemoteEndPoint.Address.ToString()))
                             {
-                                if (request.Contains("Token"))
-                                {
-                                    if (Cache.AuthTokens.Any(token => token.AuthToken == request.Get("Token") && token.IP == context.Request.RemoteEndPoint.Address.ToString()))
-                                    {
-                                        if (request.Contains("ProductID"))
-                                        {
-                                            int ProductID = Convert.ToInt32(request.Get("ProductID"));
+                                Bytes = Encoding.UTF8.GetBytes("Authenticated");
 
-                                            List<Product> products = Connect.QueryUserProducts(Cache.AuthTokens.Find(token => token.AuthToken == request.Get("Token")).Member.UserID);
-
-                                            if (products.Any(product => product.Id == ProductID))
-                                            {
-                                                Bytes = File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\DLLs\\" + Cache.Products.Find(product => product.Id == ProductID).Name + ".dll");
-
-                                                Console.WriteLine("Product Downloaded");
-                                            }
-                                            else
-                                            {
-                                                Bytes = Encoding.UTF8.GetBytes("Product Un-Owned");
-
-                                                Console.WriteLine("Product Un-Owned");
-                                            }
-                                        }
-                                        else
-                                        {
-                                            Bytes = Encoding.UTF8.GetBytes("No Product ID Provided - " + request.Data);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        Bytes = Encoding.UTF8.GetBytes("Not Authenticated - Token Not Found");
-                                    }
-                                }
-                                else
-                                {
-                                    Bytes = Encoding.UTF8.GetBytes("Not Authenticated - No Token");
-                                }
+                                Console.WriteLine("Authenticated");
                             }
                             else
                             {
-                                Bytes = Encoding.UTF8.GetBytes("No Request Provided - " + request.Data);
+                                Bytes = Encoding.UTF8.GetBytes("Not Authenticated - " + context.Request.RemoteEndPoint.Address.ToString());
+
+                                Console.WriteLine("Not Authenticated");
                             }
                         }
-
-                        Bytes = Encrypt(Bytes);
-                    }
-                    else
-                    {
-                        context.Response.ContentType = "text/plain";
-
-                        if (request.Contains("Request"))
+                        else if (request.Get("Request") == "Download")
                         {
-                            if (request.Get("Request") == "OAuth")
+                            if (request.Contains("Token"))
                             {
-                                if (request.Contains("UserID"))
+                                if (Cache.AuthTokens.Any(token => token.AuthToken == request.Get("Token") && token.IP == context.Request.RemoteEndPoint.Address.ToString()))
                                 {
-                                    int UserID = Convert.ToInt32(request.Get("UserID"));
-
-                                    if (request.Contains("Username"))
+                                    if (request.Contains("ProductID"))
                                     {
-                                        string Username = request.Get("Username");
+                                        int ProductID = Convert.ToInt32(request.Get("ProductID"));
 
-                                        if (request.Contains("Avatar"))
+                                        List<Product> products = Connect.QueryUserProducts(Cache.AuthTokens.Find(token => token.AuthToken == request.Get("Token")).Member.UserID);
+
+                                        if (products.Any(product => product.Id == ProductID))
                                         {
-                                            string Avatar = request.Get("Avatar");
+                                            Bytes = File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\DLLs\\" + Cache.Products.Find(product => product.Id == ProductID).Name + ".dll");
 
-                                            if (request.Contains("PrivateKey"))
-                                            {
-                                                string PrivateKey = request.Get("PrivateKey");
-
-                                                if (request.Contains("HWID"))
-                                                {
-                                                    string HWID = request.Get("HWID");
-
-                                                    lock (Cache.OAuths)
-                                                    {
-                                                        if (!Cache.OAuths.Any(oauth => oauth.Member.UserID == UserID && oauth.PrivateKey == PrivateKey && oauth.HWID == HWID))
-                                                            Cache.OAuths.Add(new OAuth(new Member(UserID, Username, Avatar), PrivateKey, HWID));
-
-                                                        Bytes = Encoding.UTF8.GetBytes("Login Found");
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    Console.WriteLine("Missing Argument - HWID");
-                                                }
-                                            }
-                                            else
-                                            {
-                                                Console.WriteLine("Missing Argument - PrivateKey");
-                                            }
+                                            Console.WriteLine("Product Downloaded");
                                         }
                                         else
                                         {
-                                            Console.WriteLine("Missing Argument - Avatar");
+                                            Bytes = Encoding.UTF8.GetBytes("Product Un-Owned");
+
+                                            Console.WriteLine("Product Un-Owned");
                                         }
                                     }
                                     else
                                     {
-                                        Console.WriteLine("Missing Argument - Username");
+                                        Bytes = Encoding.UTF8.GetBytes("No Product ID Provided - " + request.Data);
                                     }
                                 }
                                 else
                                 {
-                                    Console.WriteLine("Missing Argument - UserID");
+                                    Bytes = Encoding.UTF8.GetBytes("Not Authenticated - Token Not Found");
                                 }
-                            }
-                            else if (request.Get("Request") == "Products")
-                            {
-                                string Output = "";
-
-                                foreach (Product product in Cache.Products)
-                                {
-                                    Output += (product.Id == 1 ? "" + product.Id : "%split%" + product.Id) + "%delimiter%" + product.Name + "%delimiter%" + product.File + "%delimiter%" + product.ProcessName + "%delimiter%" + product.Status + "%delimiter%" + product.Version + "%delimiter%" + product.Free + "%delimiter%" + product.AutoLaunchMem + "%delimiter%" + product.Internal;
-                                }
-
-                                Bytes = Encoding.UTF8.GetBytes(Output);
-                            }
-                            else if (request.Get("Request") == "OnlineCounts")
-                            {
-                                string Output = "";
-
-                                foreach (Product product in Cache.Products)
-                                {
-                                    Output += (product.Id == 1 ? "" + product.Name : "%split%" + product.Name) + "%delimiter%" + Cache.AuthTokens.Count(token => token.RunningProduct == product.Id).ToString();
-                                }
-
-                                Bytes = Encoding.UTF8.GetBytes(Output);
                             }
                             else
                             {
-                                Bytes = Encoding.UTF8.GetBytes("Invalid Request - " + request.Data);
+                                Bytes = Encoding.UTF8.GetBytes("Not Authenticated - No Token");
                             }
                         }
                         else
@@ -311,21 +341,120 @@ namespace Main
                         }
                     }
 
-                    //application/octet-stream
-                    context.Response.ContentLength64 = Bytes.Length;
-                    context.Response.AddHeader("Date", DateTime.Now.ToString("r"));
-                    context.Response.AppendHeader("Cache-Control", "no-cache");
-
-                    context.Response.OutputStream.Write(Bytes, 0, Bytes.Length);
-
-                    context.Response.StatusCode = (int)HttpStatusCode.OK;
-                    context.Response.OutputStream.Flush();
+                    Bytes = Encrypt(Bytes);
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine(ex.ToString());
+                    context.Response.ContentType = "text/plain";
+
+                    if (request.Contains("Request"))
+                    {
+                        if (request.Get("Request") == "OAuth")
+                        {
+                            if (request.Contains("UserID"))
+                            {
+                                int UserID = Convert.ToInt32(request.Get("UserID"));
+
+                                if (request.Contains("Username"))
+                                {
+                                    string Username = request.Get("Username");
+
+                                    if (request.Contains("Avatar"))
+                                    {
+                                        string Avatar = request.Get("Avatar");
+
+                                        if (request.Contains("PrivateKey"))
+                                        {
+                                            string PrivateKey = request.Get("PrivateKey");
+
+                                            if (request.Contains("HWID"))
+                                            {
+                                                string HWID = request.Get("HWID");
+
+                                                lock (Cache.OAuths)
+                                                {
+                                                    if (!Cache.OAuths.Any(oauth => oauth.Member.UserID == UserID && oauth.PrivateKey == PrivateKey && oauth.HWID == HWID))
+                                                        Cache.OAuths.Add(new OAuth(new Member(UserID, Username, Avatar), PrivateKey, HWID));
+
+                                                    Bytes = Encoding.UTF8.GetBytes("Login Found");
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine("Missing Argument - HWID");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine("Missing Argument - PrivateKey");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Missing Argument - Avatar");
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Missing Argument - Username");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Missing Argument - UserID");
+                            }
+                        }
+                        else if (request.Get("Request") == "Products")
+                        {
+                            string Output = "";
+
+                            foreach (Product product in Cache.Products)
+                            {
+                                Output += (product.Id == 1 ? "" + product.Id : "%split%" + product.Id) + "%delimiter%" + product.Name + "%delimiter%" + product.File + "%delimiter%" + product.ProcessName + "%delimiter%" + product.Status + "%delimiter%" + product.Version + "%delimiter%" + product.Free + "%delimiter%" + product.AutoLaunchMem + "%delimiter%" + product.Internal;
+                            }
+
+                            Bytes = Encoding.UTF8.GetBytes(Output);
+                        }
+                        else if (request.Get("Request") == "OnlineCounts")
+                        {
+                            string Output = "";
+
+                            foreach (Product product in Cache.Products)
+                            {
+                                Output += (product.Id == 1 ? "" + product.Name : "%split%" + product.Name) + "%delimiter%" + Cache.AuthTokens.Count(token => token.RunningProduct == product.Id).ToString();
+                            }
+
+                            Bytes = Encoding.UTF8.GetBytes(Output);
+                        }
+                        else
+                        {
+                            Bytes = Encoding.UTF8.GetBytes("Invalid Request - " + request.Data);
+                        }
+                    }
+                    else
+                    {
+                        Bytes = Encoding.UTF8.GetBytes("No Request Provided - " + request.Data);
+                    }
                 }
+
+                //application/octet-stream
+                context.Response.ContentLength64 = Bytes.Length;
+                context.Response.AddHeader("Date", DateTime.Now.ToString("r"));
+                context.Response.AppendHeader("Cache-Control", "no-cache");
+
+                context.Response.OutputStream.Write(Bytes, 0, Bytes.Length);
+
+                context.Response.StatusCode = (int)HttpStatusCode.OK;
+                context.Response.Close();
             }
+            catch (Exception ex)
+            {
+                this.BeginInvoke((MethodInvoker)delegate { HTTPExceptions.AppendText("Exception for HTTP Connection: " + connection.IP + Environment.NewLine + ex.ToString()); this.HTTPExceptions.Refresh(); });
+            }
+
+            this.BeginInvoke((MethodInvoker)delegate { textBox2.AppendText("Exited HTTP Thread - " + connection.IP + Environment.NewLine); this.textBox2.Refresh(); });
+
+            connection.Exited = true;
         }
 
         public void TCPServer()
@@ -339,19 +468,36 @@ namespace Main
 
                 Console.WriteLine("Opened Socket");
 
-                new Thread(() => ClientThread(client)).Start();
+                TCP_Connection connection = new TCP_Connection(client);
+
+                connection.Thread = new Thread(() => TCP_Thread(connection));
+
+                connection.Thread.Start();
+
+                Cache.TCP_Connections.Add(connection);
+
+                this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText("Starting Connection - " + ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString() + Environment.NewLine); this.textBox1.Refresh(); });
 
                 Thread.Sleep(250);
             }
         }
 
-        public void ClientThread(TcpClient client)
+        public void TCP_Thread(TCP_Connection connection)
         {
+            TcpClient client = connection.TcpClient;
+
             while (true)
             {
+                if (client == null)
+                    goto Close;
+                else if (!client.Connected)
+                    goto Close;
+
                 NetworkStream strm = client.GetStream();
 
-                if (!strm.DataAvailable)
+                if (strm == null)
+                    goto Close;
+                else if (!strm.DataAvailable)
                     goto Sleep;
 
                 Stopwatch stopwatch = new Stopwatch();
@@ -367,18 +513,25 @@ namespace Main
 
                     Console.WriteLine("Recieved and Deserialized Request - " + stopwatch.Elapsed.TotalMilliseconds);
 
+                    connection.LastRequestDate = DateTime.Now;
+
                     //Response
                     Console.WriteLine("Recieved: " + r.Command);
 
                     if (r.Command == "Version")
                     {
+                        Response response = new Response("Version");
+
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
-                        string Version = Cache.Version;
+                        response.Object = Cache.Version;
 
                         Console.WriteLine("Closed Database Database - " + stopwatch.Elapsed.TotalMilliseconds);
 
-                        formatter.Serialize(strm, new Response("Version", Version));
+                        if (response.Error)
+                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+
+                        formatter.Serialize(strm, response);
 
                         Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
                     }
@@ -391,20 +544,19 @@ namespace Main
 
                         try
                         {
-                            using (Stream source = File.OpenRead(Environment.CurrentDirectory + "\\Products\\" + "Updater.zip"))
-                            {
-                                int bytesRead = 0;
-                                byte[] buffer = new byte[2048];
-                                while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
-                                    ((MemoryStream)response.Object).Write(buffer, 0, bytesRead);
-                            }
+                            response.Object = new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\" + "Updater.zip"));
                         }
                         catch (Exception ex)
                         {
                             response = new Response("Update", "Server Error", true);
 
+                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Exception for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + Environment.NewLine + ex.ToString()); this.TCPExceptions.Refresh(); });
+
                             Console.WriteLine(ex.ToString());
                         }
+
+                        if (response.Error)
+                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
 
                         formatter.Serialize(strm, response);
 
@@ -419,20 +571,19 @@ namespace Main
 
                         try
                         {
-                            using (Stream source = File.OpenRead(Environment.CurrentDirectory + "\\Products\\" + "Update.zip"))
-                            {
-                                int bytesRead = 0;
-                                byte[] buffer = new byte[2048];
-                                while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
-                                    ((MemoryStream)response.Object).Write(buffer, 0, bytesRead);
-                            }
+                            response.Object = new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\" + "Update.zip"));
                         }
                         catch (Exception ex)
                         {
                             response = new Response("Update", "Server Error", true);
 
+                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Exception for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + Environment.NewLine + ex.ToString()); this.TCPExceptions.Refresh(); });
+
                             Console.WriteLine(ex.ToString());
                         }
+
+                        if (response.Error)
+                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
 
                         formatter.Serialize(strm, response);
 
@@ -440,15 +591,57 @@ namespace Main
                     }
                     else if (r.Command == "Login")
                     {
+                        Response response = new Response("Login");
+
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
                         Login login = (Login)r.Object;
 
                         Console.WriteLine("Converted Login - " + stopwatch.Elapsed.TotalMilliseconds);
 
-                        Response response = HandleLogin.Login(client, login.Username, login.Password, login.HWID);
+                        int UserID = 0;
+                        string AvatarURL = "";
+                        string Response = new WebClient().DownloadString("http://api.maverickcheats.eu/community/maverickcheats/login.php?Username=" + HttpUtility.UrlEncode(login.Username) + "&Password=" + HttpUtility.UrlEncode(login.Password) + "&HWID=" + HttpUtility.UrlEncode(login.HWID));
+
+                        if (Response.Contains("%delimiter%"))
+                        {
+                            if (Response.Split(new string[] { "%delimiter%" }, StringSplitOptions.None).Length >= 2)
+                            {
+                                if (Response.Split(new string[] { "%delimiter%" }, StringSplitOptions.None)[0] == "Login Found")
+                                {
+                                    if (Response.Split(new string[] { "%delimiter%" }, StringSplitOptions.None)[1] != "")
+                                    {
+                                        UserID = int.TryParse(Response.Split(new string[] { "%delimiter%" }, StringSplitOptions.None)[1], out _) ? int.Parse(Response.Split(new string[] { "%delimiter%" }, StringSplitOptions.None)[1]) : 0;
+
+                                        if (Response.Split(new string[] { "%delimiter%" }, StringSplitOptions.None)[2] != "")
+                                            AvatarURL = Response.Split(new string[] { "%delimiter%" }, StringSplitOptions.None)[2];
+
+                                        response = new Response("Login", Token.GenerateToken(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(), new Member(UserID, login.Username, AvatarURL)));
+                                    }
+                                    else
+                                    {
+                                        response = new Response("Login", "Login Failed - UserID Query Failed", true);
+                                    }
+                                }
+                                else
+                                {
+                                    response = new Response("Login", "Login Failed - Login not Found", true);
+                                }
+                            }
+                            else
+                            {
+                                response = new Response("Login", "Internal Error - No Data Provided", true);
+                            }
+                        }
+                        else
+                        {
+                            response = new Response("Login", "Error - " + Response, true);
+                        }
 
                         Console.WriteLine("Queried Response - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        if (response.Error)
+                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
 
                         formatter.Serialize(strm, response);
 
@@ -456,7 +649,7 @@ namespace Main
                     }
                     else if (r.Command == "OAuth")
                     {
-                        Response response = new Response();
+                        Response response = new Response("OAuth");
 
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -489,12 +682,17 @@ namespace Main
 
                         Console.WriteLine("Queried Response - " + stopwatch.Elapsed.TotalMilliseconds);
 
+                        if (response.Error)
+                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+
                         formatter.Serialize(strm, response);
 
                         Console.WriteLine("Sent Response - " + stopwatch.Elapsed.TotalMilliseconds);
                     }
                     else if (r.Command == "Products")
                     {
+                        Response response = new Response("Products");
+
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
                         NetworkTypes.Token token = (NetworkTypes.Token)r.Token;
@@ -507,21 +705,26 @@ namespace Main
                         {
                             Console.WriteLine("Querying Data - " + stopwatch.Elapsed.TotalMilliseconds);
 
-                            List<Product> products = Connect.QueryUserProducts(AuthToken.Member.UserID);
-
-                            formatter.Serialize(strm, new Response("Products", products));
+                            response.Object = Connect.QueryUserProducts(AuthToken.Member.UserID);
 
                             Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
                         }
                         else
                         {
-                            formatter.Serialize(strm, new Response("Products", "Not Authenticated", true));
+                            response = new Response("Products", "Not Authenticated", true);
 
                             Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
                         }
+
+                        if (response.Error)
+                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+
+                        formatter.Serialize(strm, response);
                     }
                     else if (r.Command == "Download")
                     {
+                        Response response = new Response("Download", new MemoryStream());
+
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
                         NetworkTypes.Token token = (NetworkTypes.Token)r.Token;
@@ -544,32 +747,22 @@ namespace Main
                                 //Upload File
                                 Console.WriteLine("Reading File");
 
-                                MemoryStream stream = new MemoryStream();
-                                using (Stream source = File.OpenRead(Environment.CurrentDirectory + "\\Products\\" + product.File))
-                                {
-                                    int bytesRead = 0;
-                                    byte[] buffer = new byte[2048];
-                                    while ((bytesRead = source.Read(buffer, 0, buffer.Length)) > 0)
-                                        stream.Write(buffer, 0, bytesRead);
-                                }
-
-                                formatter.Serialize(strm, new Response("Download", stream));
-
-                                Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
+                                response.Object = new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\" + product.File));
                             }
                             else
                             {
-                                formatter.Serialize(strm, new Response("Download", "Product Un-Owned", true));
+                                response = new Response("Download", "Product Un-Owned", true);
                             }
-
-                            Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
                         }
                         else
                         {
-                            formatter.Serialize(strm, new Response("Download", "Not Authenticated", true));
-
-                            Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
+                            response = new Response("Download", "Not Authenticated", true);
                         }
+
+                        if (response.Error)
+                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+
+                        formatter.Serialize(strm, response);
                     }
                     else if (r.Command == "Authenticate")
                     {
@@ -595,7 +788,7 @@ namespace Main
                                 {
                                     AuthToken.LastRequest = DateTime.Now;
 
-                                    response = new Response("Authenticate", "Authenticated", false);
+                                    response = new Response("Authenticate", "Authenticated");
                                 }
                                 else
                                 {
@@ -616,19 +809,36 @@ namespace Main
                             response = new Response("Authenticate", "Not Authenticated", true);
                         }
 
+                        if (response.Error)
+                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+
+                        formatter.Serialize(strm, response);
+
+                        Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
+                    }
+                    else if (r.Command == "Log")
+                    {
+                        Response response = new Response("Log");
+
+                        Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        //Get Logs, Write Logs
+
                         formatter.Serialize(strm, response);
 
                         Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
                     }
                     else
                     {
+                        this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Exception for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + Environment.NewLine + "Invalid Command - " + r.Command); this.TCPExceptions.Refresh(); });
+
                         formatter.Serialize(strm, new Response(r.Command, "Invalid Command", true));
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.ToString());
-                    
+                    this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Exception for TCP Connection: " + connection.IP + Environment.NewLine + ex.ToString() + Environment.NewLine); this.TCPExceptions.Refresh(); });
+
                     break;
                 }
 
@@ -636,9 +846,22 @@ namespace Main
                 Thread.Sleep(100);
             }
 
-            client.Close();
+            Close:
+            this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText("Closing Connection - " + connection.IP + Environment.NewLine); this.textBox1.Refresh(); });
 
             Console.Write("Exited Thread " + Thread.CurrentThread.ManagedThreadId);
+        }
+
+        private void RefreshButton_Click(object sender, EventArgs e)
+        {
+            VersionLabel.Text = "Version: " + Cache.Version;
+            TCPInstancesLabel.Text = "TCP Instances: " + Cache.TCP_Connections.Count;
+            HTTPInstancesLabel.Text = "HTTP Instances: " + Cache.HTTP_Connections.Count;
+            OAuthInstancesLabel.Text = "OAuth Instances: " + Cache.OAuths.Count;
+            AuthTokenInstancesLabel.Text = "AuthToken Instances: " + Cache.AuthTokens.Count;
+            ProductInstancesLabel.Text = "Number of Products in Cache: " + Cache.Products.Count;
+
+            this.Refresh();
         }
     }
 }

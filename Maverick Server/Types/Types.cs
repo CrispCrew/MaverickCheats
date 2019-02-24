@@ -4,11 +4,83 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Main
 {
+    public class HTTP_Connection
+    {
+        public Thread Thread;
+
+        public HttpListenerContext HttpListenerContext;
+
+        public string IP;
+
+        public DateTime CreationDate;
+        public DateTime LastRequestDate;
+
+        public bool Exited = false;
+
+        public HTTP_Connection(HttpListenerContext HttpListenerContext)
+        {
+            this.HttpListenerContext = HttpListenerContext;
+
+            this.IP = HttpListenerContext.Request.RemoteEndPoint.Address.ToString();
+
+            this.CreationDate = DateTime.Now;
+            this.LastRequestDate = DateTime.Now;
+        }
+
+        public HTTP_Connection(Thread Thread, HttpListenerContext HttpListenerContext)
+        {
+            this.Thread = Thread;
+
+            this.HttpListenerContext = HttpListenerContext;
+
+            this.IP = HttpListenerContext.Request.RemoteEndPoint.Address.ToString();
+
+            this.CreationDate = DateTime.Now;
+            this.LastRequestDate = DateTime.Now;
+        }
+    }
+
+    public class TCP_Connection
+    {
+        public Thread Thread;
+
+        public TcpClient TcpClient;
+
+        public string IP;
+
+        public DateTime CreationDate;
+        public DateTime LastRequestDate;
+
+        public TCP_Connection(TcpClient TcpClient)
+        {
+            this.TcpClient = TcpClient;
+
+            this.IP = ((IPEndPoint)TcpClient.Client.RemoteEndPoint).Address.ToString();
+
+            this.CreationDate = DateTime.Now;
+            this.LastRequestDate = DateTime.Now;
+        }
+
+        public TCP_Connection(Thread Thread, TcpClient TcpClient)
+        {
+            this.Thread = Thread;
+
+            this.TcpClient = TcpClient;
+
+            this.IP = ((IPEndPoint)TcpClient.Client.RemoteEndPoint).Address.ToString();
+
+            this.CreationDate = DateTime.Now;
+            this.LastRequestDate = DateTime.Now;
+        }
+    }
+
     public class OAuth
     {
         public Member Member;
@@ -154,19 +226,24 @@ namespace Main
 
             this.AvatarURL = AvatarURL;
 
+            Console.WriteLine(AvatarURL);
+
             try
             {
-                if (!File.Exists(Environment.CurrentDirectory + "\\Members\\" + Path.GetFileName(AvatarURL)))
+                if (!Directory.Exists(Environment.CurrentDirectory + "\\Members\\" + UserID + "\\"))
+                    Directory.CreateDirectory(Environment.CurrentDirectory + "\\Members\\" + UserID + "\\");
+
+                if (!File.Exists(Environment.CurrentDirectory + "\\Members\\" + UserID + "\\" + Path.GetFileName(AvatarURL)))
                 {
                     byte[] bytes = new WebClient().DownloadData(AvatarURL);
 
-                    File.WriteAllBytes(Environment.CurrentDirectory + "\\Members\\" + Path.GetFileName(AvatarURL), bytes);
+                    File.WriteAllBytes(Environment.CurrentDirectory + "\\Members\\" + UserID + "\\" + Path.GetFileName(AvatarURL), bytes);
 
                     this.AvatarImage = Image.FromStream(new MemoryStream(new WebClient().DownloadData(AvatarURL)));
                 }
                 else
                 {
-                    this.AvatarImage = Image.FromStream(new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Members\\" + Path.GetFileName(AvatarURL))));
+                    this.AvatarImage = Image.FromStream(new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Members\\" + UserID + "\\" + Path.GetFileName(AvatarURL))));
                 }
             }
             catch (Exception ex)

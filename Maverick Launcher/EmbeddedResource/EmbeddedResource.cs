@@ -5,6 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Diagnostics;
+using Main;
 
 public class EmbeddedResource
 {
@@ -88,7 +89,7 @@ public class EmbeddedResource
                 MethodInfo main = asm.EntryPoint;
                 main.Invoke(null, new object[] { null });
 
-                Console.WriteLine("Invoked Updater.exe");
+                Logs.LogEntries.Add("Invoked Updater.exe");
 
                 // Add the assembly/dll into dictionary
                 EmbeddedAssemblies.Add(asm.FullName, asm);
@@ -96,7 +97,7 @@ public class EmbeddedResource
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.ToString());
+                Logs.LogEntries.Add("Error: " + ex.ToString());
             }
         }
     }

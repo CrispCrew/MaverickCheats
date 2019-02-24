@@ -38,18 +38,13 @@ namespace NetworkTypes
     public class Response
     {
         public string Message;
-        public object Object = 0;
+        public object Object = null;
         public bool Error = false;
-
-        public Response()
-        {
-
-        }
 
         public Response(string Message, object Object = null, bool Error = false)
         {
             this.Message = Message;
-            this.Object = Object != null ? Object : 0;
+            this.Object = Object;
             this.Error = Error;
         }
     }
@@ -98,9 +93,14 @@ namespace NetworkTypes
     [Serializable]
     public class Token
     {
-        public Member Member;
+        public Member Member = null;
 
         public string AuthToken;
+
+        public Token(string AuthToken)
+        {
+            this.AuthToken = AuthToken;
+        }
 
         public Token(Member Member, string AuthToken)
         {
