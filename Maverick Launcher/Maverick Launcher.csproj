@@ -93,6 +93,7 @@
     <Compile Include="AuthLib\Client.cs" />
     <Compile Include="EmbeddedResource\EmbeddedResource.cs" />
     <Compile Include="Functions\Encryption.cs" />
+    <Compile Include="Functions\Fingerprint.cs" />
     <Compile Include="Login.cs">
       <SubType>Form</SubType>
     </Compile>
