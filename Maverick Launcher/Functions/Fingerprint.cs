@@ -182,7 +182,7 @@ namespace Main.Functions
                 + identifier("Win32_DiskDrive", "Name")
                 + identifier("Win32_DiskDrive", "Model")
                 + identifier("Win32_DiskDrive", "Partitions")
-                + identifier("Win32_DiskDrive", "SerialNumber"); //Partitions
+                + identifier("Win32_DiskDrive", "SerialNumber");
         }
         //OS Identifiers
         private static string OSid()
