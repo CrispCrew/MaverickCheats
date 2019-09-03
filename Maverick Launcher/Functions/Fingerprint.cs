@@ -17,11 +17,11 @@ namespace Main.Functions
         private static string DISKS = "";
         private static string SYSTEM = "";
 
-        public static string HWID = string.Empty;
+        public static string HWID = "";
         
         public static string Value()
         {
-            if (string.IsNullOrEmpty(HWID))
+            if (HWID == "")
             {
                 Stopwatch timer = new Stopwatch();
                 timer.Start();

@@ -9,7 +9,7 @@ namespace Main.Functions
     {
         public static string crypt(string clearText)
         {
-            string EncryptionKey = "CHANGEEVENTUALLY"; //FingerPrint.Value();
+            string EncryptionKey = FingerPrint.Value();
 
             byte[] clearBytes = Encoding.Unicode.GetBytes(clearText);
             using (Aes encryptor = Aes.Create())
@@ -32,7 +32,7 @@ namespace Main.Functions
 
         public static string decrypt(string cipherText)
         {
-            string EncryptionKey = "CHANGEEVENTUALLY"; //FingerPrint.Value();
+            string EncryptionKey = FingerPrint.Value();
 
             byte[] cipherBytes = Convert.FromBase64String(cipherText);
             using (Aes encryptor = Aes.Create())
