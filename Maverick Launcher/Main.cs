@@ -10,11 +10,14 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
+using System.Reflection;
 
 namespace Main
 {
     public partial class Main : Form
     {
+        public bool Busy = false;
+
         /// <summary>
         /// Connection to the Server
         /// </summary>
@@ -36,8 +39,8 @@ namespace Main
             this.token = token;
 
             InitializeComponent();
-
-            loading.Image = Image.FromStream(new MemoryStream(EmbeddedResource.EmbeddedResources.First(resource => resource.Key == "Spinner.gif").Value));
+            
+            loading.Image = Image.FromStream(new MemoryStream(EmbeddedResource.EmbeddedResources.First(resource => resource.Key == "Logo (40x40).gif").Value));
 
             sideBar.Width = 50;
 
@@ -49,64 +52,81 @@ namespace Main
 
         private void Main_Load(object sender, EventArgs e)
         {
+            Busy = true;
+
             this.sideBar.MouseWheel += SideBar_MouseWheel;
 
             new Thread(() =>
             {
                 this.BeginInvoke((MethodInvoker)delegate { bunifuTransition3.ShowSync(loading); });
 
-                products = client.Products(token);
+                object Output;
 
-                foreach (Product product in products)
+                if (client.Products(token, out Output))
                 {
-                    Logs.LogEntries.Add(product.Id + ", " + product.Name + "," + product.Image.LongLength);
+                    products = (List<Product>)Output;
 
-                    BunifuFlatButton CheatListTab = new BunifuFlatButton();
-                    CheatListTab.Tag = product.Id;
+                    foreach (Product product in products)
+                    {
+                        Logs.LogEntries.Add(product.Id + ", " + product.Name + "," + product.Image.LongLength);
 
-                    System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
+                        BunifuFlatButton CheatListTab = new BunifuFlatButton();
+                        CheatListTab.Tag = product.Id;
 
-                    // 
-                    // bunifuFlatButton1
-                    // 
-                    CheatListTab.Activecolor = Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(204)))));
-                    CheatListTab.BackColor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
-                    CheatListTab.BackgroundImageLayout = ImageLayout.Stretch;
-                    CheatListTab.BorderRadius = 0;
-                    CheatListTab.Cursor = System.Windows.Forms.Cursors.Hand;
-                    bunifuTransition1.SetDecoration(CheatListTab, BunifuAnimatorNS.DecorationType.None);
-                    CheatListTab.DisabledColor = Color.Gray;
-                    CheatListTab.Iconcolor = Color.Transparent;
-                    CheatListTab.Iconimage = Image.FromStream(new MemoryStream(product.Image));
-                    CheatListTab.Iconimage_right = null;
-                    CheatListTab.Iconimage_right_Selected = null;
-                    CheatListTab.Iconimage_Selected = null;
-                    CheatListTab.IconMarginLeft = 0;
-                    CheatListTab.IconMarginRight = 0;
-                    CheatListTab.IconRightVisible = true;
-                    CheatListTab.IconRightZoom = 0D;
-                    CheatListTab.IconVisible = true;
-                    CheatListTab.IconZoom = 65;
-                    CheatListTab.IsTab = true;
-                    CheatListTab.Name = "button";
-                    CheatListTab.Normalcolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
-                    CheatListTab.OnHovercolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
-                    CheatListTab.OnHoverTextColor = Color.White;
-                    CheatListTab.Size = new Size(303, 48);
-                    CheatListTab.TabIndex = product.Id;
-                    CheatListTab.Text = "  " + product.Name;
-                    CheatListTab.TextAlign = ContentAlignment.MiddleLeft;
-                    CheatListTab.Textcolor = Color.Silver;
-                    CheatListTab.TextFont = new Font("Calibri", 11.25F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(0)));
-                    CheatListTab.Click += new EventHandler(CheatListTab_Click);
-                    CheatListTab.MouseDown += new EventHandler(CheatListTab_MouseDown);
-                    CheatListTab.MouseEnter += new EventHandler(CheatListTabs_Enter);
-                    CheatListTab.MouseLeave += new EventHandler(CheatListTabs_Leave);
+                        System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
 
-                    this.BeginInvoke((MethodInvoker)delegate { flowLayoutPanel1.Controls.Add(CheatListTab); });
+                        // 
+                        // bunifuFlatButton1
+                        // 
+                        CheatListTab.Activecolor = Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(102)))), ((int)(((byte)(204)))));
+                        CheatListTab.BackColor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
+                        CheatListTab.BackgroundImageLayout = ImageLayout.Stretch;
+                        CheatListTab.BorderRadius = 0;
+                        CheatListTab.Cursor = System.Windows.Forms.Cursors.Hand;
+                        bunifuTransition1.SetDecoration(CheatListTab, BunifuAnimatorNS.DecorationType.None);
+                        CheatListTab.DisabledColor = Color.Gray;
+                        CheatListTab.Iconcolor = Color.Transparent;
+                        CheatListTab.Iconimage = Image.FromStream(new MemoryStream(product.Image));
+                        CheatListTab.Iconimage_right = null;
+                        CheatListTab.Iconimage_right_Selected = null;
+                        CheatListTab.Iconimage_Selected = null;
+                        CheatListTab.IconMarginLeft = 0;
+                        CheatListTab.IconMarginRight = 0;
+                        CheatListTab.IconRightVisible = true;
+                        CheatListTab.IconRightZoom = 0D;
+                        CheatListTab.IconVisible = true;
+                        CheatListTab.IconZoom = 65;
+                        CheatListTab.IsTab = true;
+                        CheatListTab.Name = "button";
+                        CheatListTab.Normalcolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
+                        CheatListTab.OnHovercolor = Color.FromArgb(((int)(((byte)(37)))), ((int)(((byte)(46)))), ((int)(((byte)(59)))));
+                        CheatListTab.OnHoverTextColor = Color.White;
+                        CheatListTab.Size = new Size(303, 48);
+                        CheatListTab.TabIndex = product.Id;
+                        CheatListTab.Text = "  " + product.Name;
+                        CheatListTab.TextAlign = ContentAlignment.MiddleLeft;
+                        CheatListTab.Textcolor = Color.Silver;
+                        CheatListTab.TextFont = new Font("Calibri", 11.25F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(0)));
+                        CheatListTab.Click += new EventHandler(CheatListTab_Click);
+                        CheatListTab.MouseDown += new EventHandler(CheatListTab_MouseDown);
+                        CheatListTab.MouseEnter += new EventHandler(CheatListTabs_Enter);
+                        CheatListTab.MouseLeave += new EventHandler(CheatListTabs_Leave);
+
+                        this.BeginInvoke((MethodInvoker)delegate { flowLayoutPanel1.Controls.Add(CheatListTab); });
+                    }
+                }
+                else
+                {
+                    this.BeginInvoke((MethodInvoker)delegate
+                    {
+                        this.requestFailed.Text = (string)Output;
+                        this.requestFailed.Visible = true;
+                    });
                 }
 
                 this.BeginInvoke((MethodInvoker)delegate { loading.Visible = false; });
+
+                Busy = false;
             }).Start();
         }
 
@@ -130,6 +150,11 @@ namespace Main
 
         private void launchButton_Click(object sender, EventArgs e)
         {
+            if (Busy)
+                return;
+
+            Busy = true;
+
             new Thread(() =>
             {
                 if (!flowLayoutPanel1.Controls.Cast<BunifuFlatButton>().ToList().Any(control => control.selected))
@@ -150,67 +175,158 @@ namespace Main
                 {
                     MessageBox.Show("We're sorry, this cheat is being updated by the Development Team. Check back later, Thanks.");
 
+                    Busy = false;
+
                     return;
                 }
 
                 this.BeginInvoke((MethodInvoker)delegate { bunifuTransition3.ShowSync(loading); });
 
-                if (Directory.Exists(Environment.CurrentDirectory + "\\" + product.Name + "\\"))
-                {
-                    try
-                    {
-                        Directory.Delete(Environment.CurrentDirectory + "\\" + product.Name + "\\");
-                    }
-                    catch
-                    {
-
-                    }
-                }
-
                 this.BeginInvoke((MethodInvoker)delegate { this.TopMost = false; });
 
-                MemoryStream download = client.Download(token, product);
+                object Output;
 
-                if (!Directory.Exists(Environment.CurrentDirectory + "\\" + product.Name + "\\"))
+                if (client.Download(token, product, out Output))
                 {
-                    Directory.CreateDirectory(Environment.CurrentDirectory + "\\" + product.Name + "\\");
+                    if (!Directory.Exists(Environment.CurrentDirectory + "\\" + product.Name + "\\"))
+                    {
+                        Directory.CreateDirectory(Environment.CurrentDirectory + "\\" + product.Name + "\\");
 
-                    File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name + "\\", FileAttributes.Hidden | FileAttributes.System);
+                        File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name + "\\", FileAttributes.Hidden | FileAttributes.System);
+                    }
+                    else
+                    {
+                        try
+                        {
+                            foreach (string FilePath in Directory.GetFiles(Environment.CurrentDirectory + "\\" + product.Name + "\\"))
+                            {
+                                try
+                                {
+                                    File.Delete(FilePath);
+                                }
+                                catch
+                                {
+                                    try
+                                    {
+                                        Process.GetProcessesByName(Path.GetFileNameWithoutExtension(FilePath)).ToList().ForEach(process => process.Kill());
+                                    }
+                                    catch (Exception ex2)
+                                    {
+                                        MessageBox.Show("Failed to Terminate " + Path.GetFileNameWithoutExtension(FilePath) + ", run.exe is being used and cannot be redownloaded or updated!");
+
+                                        Logs.LogEntries.Add(ex2.ToString());
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logs.LogEntries.Add("Error: Directory unable to be deleted\n" + ex.ToString());
+                        }
+
+                        Thread.Sleep(500);
+
+                        File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name + "\\", FileAttributes.Hidden | FileAttributes.System);
+                    }
                 }
                 else
                 {
-                    try
+                    this.BeginInvoke((MethodInvoker)delegate
                     {
-                        Directory.Delete(Environment.CurrentDirectory + "\\" + product.Name + "\\", true);
-                    }
-                    catch (Exception ex)
-                    {
-                        try { Process.GetProcessesByName("run").ToList().ForEach(process => process.Kill()); } catch (Exception ex2) { MessageBox.Show("Failed to Terminate run.exe, run.exe is being used and cannot be redownloaded or updated!"); Logs.LogEntries.Add(ex2.ToString()); }
+                        this.requestFailed.Text = (string)Output;
+                        this.requestFailed.Visible = true;
+                    });
 
-                        Logs.LogEntries.Add("[" + ((Process.GetProcessesByName("run.exe").ToList().Count > 0) ? "HANDLED" : "UNHANDLED") + " ERROR]:\n" + ex.ToString());
-                    }
+                    this.BeginInvoke((MethodInvoker)delegate { loading.Visible = false; });
 
-                    Thread.Sleep(500);
+                    Busy = false;
 
-                    Directory.CreateDirectory(Environment.CurrentDirectory + "\\" + product.Name + "\\");
-
-                    File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name + "\\", FileAttributes.Hidden | FileAttributes.System);
+                    return;
                 }
 
                 File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name + "\\", FileAttributes.Normal);
 
-                ZipArchive archive = new ZipArchive(download, ZipArchiveMode.Read);
-                archive.ExtractToDirectory(Environment.CurrentDirectory + "\\" + product.Name + "\\");
-                archive.Dispose();
+                string FileName = Path.GetRandomFileName() + ".exe";
 
-                Logs.LogEntries.Add("Cheat Preloaded - Waiting 120s to Auto Inject");
+                using (ZipArchive Archive = new ZipArchive((MemoryStream)Output, ZipArchiveMode.Read))
+                {
+                    foreach (ZipArchiveEntry Entry in Archive.Entries)
+                    {
+                        if (!File.Exists(Entry.FullName))
+                        {
+                            if (Entry.Name.ToLower().Contains("run"))
+                            {
+                                using (FileStream FileStream = new FileStream(Environment.CurrentDirectory + "\\" + product.Name + "\\" + Entry.Name.Replace("run.exe", FileName), FileMode.Create, FileAccess.Write))
+                                {
+                                    using (Stream Stream = Entry.Open())
+                                    {
+                                        Stream.CopyTo(FileStream);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                Entry.ExtractToFile(Environment.CurrentDirectory + "\\" + product.Name + "\\" + Entry.Name);
+                            }
+                        }
+                    }
+                }
 
                 //Check if Process has loaded enough memory that we can likely load successfuly
-                if (File.Exists(Environment.CurrentDirectory + "\\" + product.Name + "\\run.exe"))
+                if (File.Exists(Environment.CurrentDirectory + "\\" + product.Name + "\\" + FileName))
                 {
                     //Handle File Attributes
-                    File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name + "\\run.exe", FileAttributes.Normal);
+                    File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name + "\\" + FileName, FileAttributes.Normal);
                     File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name, FileAttributes.Normal);
+
+                    if (!product.Internal)
+                    {
+                        if (!Directory.Exists(@"C:\WINDOWS\Microsoft.NET\assembly\GAC_64\SlimDX\") || !Directory.GetFiles(@"C:\WINDOWS\Microsoft.NET\assembly\GAC_64\SlimDX\", "*.*", SearchOption.AllDirectories).Any(file => file.Contains("SlimDX.dll")))
+                        {
+                            Logs.LogEntries.Add("Installing DirectX Library");
+
+                            this.BeginInvoke((MethodInvoker)delegate
+                            {
+                                this.requestFailed.Text = "Extracting DirectX Library...";
+                                this.requestFailed.Visible = true;
+                            });
+
+                            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Main.Resources.SlimDX.msi"))
+                            {
+                                using (FileStream fileStream = new FileStream("SlimDX.msi", FileMode.OpenOrCreate))
+                                {
+                                    for (int i = 0; i < stream.Length; i++)
+                                        fileStream.WriteByte((byte)stream.ReadByte());
+                                }
+                            }
+
+                            this.BeginInvoke((MethodInvoker)delegate
+                            {
+                                this.requestFailed.Text = "Installing DirectX Library...";
+                                this.requestFailed.Visible = true;
+                            });
+
+                            ProcessStartInfo msiexec = new ProcessStartInfo()
+                            {
+                                FileName = "msiexec",
+                                WorkingDirectory = Environment.CurrentDirectory + "\\" + product.Name + "\\",
+                                Arguments = " /i \"" + Environment.CurrentDirectory + "\\SlimDX.msi\" /q",
+                                Verb = "runas"
+                            };
+
+                            Process.Start(msiexec).WaitForExit();
+
+                            Logs.LogEntries.Add("Installed DirectX Library");
+
+                            this.BeginInvoke((MethodInvoker)delegate
+                            {
+                                this.requestFailed.Text = "Installed DirectX Library";
+                                this.requestFailed.Visible = true;
+                            });
+
+                            try { File.Delete(Environment.CurrentDirectory + "\\SlimDX.msi"); } catch (Exception ex) { Logs.LogEntries.Add("Failed to Delete the File: SlimDX.msi" + "\nERROR:\n" + ex.ToString()); }
+                        }
+                    }
 
                     //Start Cheat
                     Logs.LogEntries.Add("Starting Cheat");
@@ -220,7 +336,7 @@ namespace Main
                     ProcessStartInfo startInfo = new ProcessStartInfo()
                     {
                         WorkingDirectory = Environment.CurrentDirectory + "\\" + product.Name + "\\",
-                        FileName = Environment.CurrentDirectory + "\\" + product.Name + "\\run.exe",
+                        FileName = Environment.CurrentDirectory + "\\" + product.Name + "\\" + FileName,
                         Arguments = token.AuthToken + " " + product.Id,
                         RedirectStandardOutput = false,
                         //UseShellExecute = false,
@@ -235,19 +351,22 @@ namespace Main
                     Logs.LogEntries.Add("Started Cheat");
 
                     //Handle File Attributes
-                    File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name + "\\run.exe", FileAttributes.Hidden | FileAttributes.System);
+                    File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name + "\\" + FileName, FileAttributes.Hidden | FileAttributes.System);
                     File.SetAttributes(Environment.CurrentDirectory + "\\" + product.Name, FileAttributes.Hidden | FileAttributes.System);
 
                     //Finish Up
-                    Thread.Sleep(1000);
-
-                    this.BeginInvoke((MethodInvoker)delegate { loading.Visible = false; });
+                    Thread.Sleep(2500);
 
                     if (product.Internal)
-                        MessageBox.Show("Injector: " + ((Process.GetProcessesByName("run").Length > 0) ? "Pre-Loaded! You have 60 seconds to start your game!" : "Failed to Launch\n( Make sure your AntiVirus is Disabled and that you start your game AFTER you Inject )"));
+                        MessageBox.Show("Injector: " + ((Process.GetProcessesByName(FileName.Replace(".exe", "")).Length > 0) ? "Pre-Loaded! You have 60 seconds to start your game!" : "Failed to Launch\n( Make sure your AntiVirus is Disabled and that you start your game AFTER you Inject )"));
                     else
                         MessageBox.Show(
-                            "External Execution: " + ((Process.GetProcessesByName("run").Length > 0) ? "Successful" : "Failed" +
+                            "External Execution: " + ((Process.GetProcessesByName(FileName.Replace(".exe", "")).Length > 0) ? 
+                            "Successful" +
+                            "\nPlease Launch your Game"
+                            : 
+                            "Failed"
+                            +
                             "\n- Make sure your game is Fullscreen Windowed or Windowed" +
                             "\n- Make sure any Security or AntiVirus's you have are 'FULLY' disabled" +
                             "\n- If you're on Windows 7, set your Windows 7 Desktop Theme as an 'Aero' Theme" +
@@ -257,13 +376,17 @@ namespace Main
                     if (Login.ProcessChecks.IsAlive || Login.ProcessChecks.IsBackground)
                         Login.ProcessChecks.Abort();
                     */
+
+                    this.BeginInvoke((MethodInvoker)delegate { loading.Visible = false; });
                 }
                 else
                     MessageBox.Show("Injection Error: {MissingInjector}");
 
-                this.Close();
+                this.BeginInvoke((MethodInvoker)delegate { this.Close(); });
 
                 Environment.Exit(0);
+
+                Busy = false;
             }).Start();
         }
 
@@ -340,17 +463,183 @@ namespace Main
             if (((MouseEventArgs)e).Clicks < 2)
                 return;
 
+            if (Busy)
+                return;
+
+            Busy = true;
+
             new Thread(() =>
             {
                 this.BeginInvoke((MethodInvoker)delegate { bunifuTransition3.ShowSync(loading); });
 
-                int ProductID = (int)((BunifuFlatButton)sender).Tag;
+                Product Product = products.Find(product => product.Id == (int)((BunifuFlatButton)sender).Tag);
 
-                ZipArchive archive = new ZipArchive(client.Download(token, products.Find(product => product.Id == ProductID)), ZipArchiveMode.Read);
-                archive.ExtractToDirectory(Environment.CurrentDirectory + "\\" + products.Find(product => product.Id == ProductID).Name + "\\");
-                archive.Dispose();
+                Logs.LogEntries.Add("Product ID: " + Product.Id + ", " + Product.Name);
 
-                this.BeginInvoke((MethodInvoker)delegate { loading.Visible = false; });
+                if (Product.Id <= 0 || Product.Name == null || Product.File == null || Product.ProcessName == null)
+                    return;
+
+                if (Product.Status == 0)
+                {
+                    MessageBox.Show("We're sorry, this cheat is being updated by the Development Team. Check back later, Thanks.");
+
+                    Busy = false;
+
+                    return;
+                }
+
+                this.BeginInvoke((MethodInvoker)delegate { bunifuTransition3.ShowSync(loading); });
+
+                this.BeginInvoke((MethodInvoker)delegate { this.TopMost = false; });
+
+                if (!Directory.Exists(Environment.CurrentDirectory + "\\" + Product.Name + "\\"))
+                {
+                    Directory.CreateDirectory(Environment.CurrentDirectory + "\\" + Product.Name + "\\");
+
+                    File.SetAttributes(Environment.CurrentDirectory + "\\" + Product.Name + "\\", FileAttributes.Hidden | FileAttributes.System);
+                }
+                else
+                {
+                    try
+                    {
+                        foreach (string FilePath in Directory.GetFiles(Environment.CurrentDirectory + "\\" + Product.Name + "\\"))
+                        {
+                            try
+                            {
+                                File.Delete(FilePath);
+                            }
+                            catch
+                            {
+                                try
+                                {
+                                    Process.GetProcessesByName(Path.GetFileNameWithoutExtension(FilePath)).ToList().ForEach(process => process.Kill());
+                                }
+                                catch (Exception ex2)
+                                {
+                                    MessageBox.Show("Failed to Terminate " + Path.GetFileNameWithoutExtension(FilePath) + ", run.exe is being used and cannot be redownloaded or updated!");
+
+                                    Logs.LogEntries.Add(ex2.ToString());
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logs.LogEntries.Add("Error: Directory unable to be deleted\n" + ex.ToString());
+                    }
+
+                    Thread.Sleep(500);
+
+                    File.SetAttributes(Environment.CurrentDirectory + "\\" + Product.Name + "\\", FileAttributes.Hidden | FileAttributes.System);
+                }
+
+                object Output;
+
+                if (client.Download(token, Product, out Output))
+                {
+                    string FileName = Path.GetRandomFileName() + ".exe";
+
+                    using (ZipArchive Archive = new ZipArchive((MemoryStream)Output, ZipArchiveMode.Read))
+                    {
+                        foreach (ZipArchiveEntry Entry in Archive.Entries)
+                        {
+                            if (Entry.Name.ToLower().Contains("run"))
+                            {
+                                using (FileStream FileStream = new FileStream(Environment.CurrentDirectory + "\\" + Product.Name + "\\" + Entry.Name.Replace("run", FileName), FileMode.Create, FileAccess.Write))
+                                {
+                                    using (Stream Stream = Entry.Open())
+                                    {
+                                        Stream.CopyTo(FileStream);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                Archive.ExtractToDirectory(Environment.CurrentDirectory + "\\" + Product.Name + "\\");
+                            }
+                        }
+                    }
+
+                    Logs.LogEntries.Add("Cheat Preloaded - Waiting 120s to Auto Inject");
+
+                    //Check if Process has loaded enough memory that we can likely load successfuly
+                    if (File.Exists(Environment.CurrentDirectory + "\\" + Product.Name + "\\" + FileName))
+                    {
+                        //Handle File Attributes
+                        File.SetAttributes(Environment.CurrentDirectory + "\\" + Product.Name + "\\" + FileName, FileAttributes.Normal);
+                        File.SetAttributes(Environment.CurrentDirectory + "\\" + Product.Name, FileAttributes.Normal);
+
+                        //Start Cheat
+                        Logs.LogEntries.Add("Starting Cheat");
+
+                        Process process = new Process();
+
+                        ProcessStartInfo startInfo = new ProcessStartInfo()
+                        {
+                            WorkingDirectory = Environment.CurrentDirectory + "\\" + Product.Name + "\\",
+                            FileName = Environment.CurrentDirectory + "\\" + Product.Name + "\\" + FileName,
+                            Arguments = token.AuthToken + " " + Product.Id,
+                            RedirectStandardOutput = false,
+                            //UseShellExecute = false,
+                            Verb = "runas"
+                        };
+
+                        process.StartInfo = startInfo;
+                        process.Start();
+
+                        //Logs.LogEntries.Add(process.StandardOutput.ReadToEnd());
+
+                        Logs.LogEntries.Add("Started Cheat");
+
+                        //Handle File Attributes
+                        File.SetAttributes(Environment.CurrentDirectory + "\\" + Product.Name + "\\" + FileName, FileAttributes.Hidden | FileAttributes.System);
+                        File.SetAttributes(Environment.CurrentDirectory + "\\" + Product.Name, FileAttributes.Hidden | FileAttributes.System);
+
+                        //Finish Up
+                        Thread.Sleep(1000);
+
+                        this.BeginInvoke((MethodInvoker)delegate { loading.Visible = false; });
+
+                        if (Product.Internal)
+                            MessageBox.Show("Injector: " + ((Process.GetProcessesByName(FileName.Replace(".exe", "")).Length > 0) ? "Pre-Loaded! You have 60 seconds to start your game!" : "Failed to Launch\n( Make sure your AntiVirus is Disabled and that you start your game AFTER you Inject )"));
+                        else
+                            MessageBox.Show(
+                                "External Execution: " + ((Process.GetProcessesByName(FileName.Replace(".exe", "")).Length > 0) ? "Successful" : "Failed" +
+                                "\n- Make sure your game is Fullscreen Windowed or Windowed" +
+                                "\n- Make sure any Security or AntiVirus's you have are 'FULLY' disabled" +
+                                "\n- If you're on Windows 7, set your Windows 7 Desktop Theme as an 'Aero' Theme" +
+                                "\n\nNote: In 'UNSUAL' cases, you 'MAY' need to 'UNINSTALL' your AntiVirus as it is possible some AntiVirus's will not 'DISABLE' completely even if the AntiVirus is set as 'DISABLED'."));
+
+                        /*
+                        if (Login.ProcessChecks.IsAlive || Login.ProcessChecks.IsBackground)
+                            Login.ProcessChecks.Abort();
+                        */
+
+                        this.BeginInvoke((MethodInvoker)delegate { loading.Visible = false; });
+                    }
+                    else
+                        MessageBox.Show("Injection Error: {MissingInjector}");
+                }
+                else
+                {
+                    this.BeginInvoke((MethodInvoker)delegate
+                    {
+                        this.requestFailed.Text = (string)Output;
+                        this.requestFailed.Visible = true;
+                    });
+
+                    this.BeginInvoke((MethodInvoker)delegate { loading.Visible = false; });
+
+                    Busy = false;
+
+                    return;
+                }
+
+                this.BeginInvoke((MethodInvoker)delegate { this.Close(); });
+
+                Environment.Exit(0);
+
+                Busy = false;
             }).Start();
         }
 
@@ -400,7 +689,7 @@ namespace Main
 
         private void BugReport_Click(object sender, EventArgs e)
         {
-            Process.Start("https://maverickcheats.eu/community/forum/23-bug-report/");
+            Process.Start("https://MaverickCheats.net/community/forum/23-bug-report/");
         }
 
         private void Main_FormClosing(object sender, FormClosingEventArgs e)
@@ -410,7 +699,7 @@ namespace Main
 
         private void memberAvatar_Click(object sender, EventArgs e)
         {
-            Process.Start("https://maverickcheats.eu/community/profile/" + token.Member.Username);
+            Process.Start("https://MaverickCheats.net/community/profile/" + token.Member.UserID + "-" + token.Member.Username);
         }
     }
 }

@@ -16,9 +16,11 @@ namespace Main
 {
     public partial class Login : Form
     {
+        public static bool Busy = true;
+
         public Client client = new Client();
 
-        public static string Version = "0.06.2";
+        public static string Version = "0.15a";
 
         public static Token token;
 
@@ -27,7 +29,7 @@ namespace Main
         {
             InitializeComponent();
 
-            pictureBox1.Image = Image.FromStream(new MemoryStream(EmbeddedResource.EmbeddedResources.First(resource => resource.Key == "Spinner.gif").Value));
+            pictureBox1.Image = Image.FromStream(new MemoryStream(EmbeddedResource.EmbeddedResources.First(resource => resource.Key == "Logo (40x40).gif").Value));
 
             Logs.LogEntries.Add("Form Loaded");
 
@@ -39,62 +41,94 @@ namespace Main
         #region Login Load()
         private void Login_Load(object sender, EventArgs e)
         {
+            Busy = true;
+
             new Thread(() =>
             {
                 this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = true; });
-                    
-                if (Version != client.Version())
+
+                string Response;
+
+                if (client.Version(out Response))
                 {
-                    MessageBox.Show("Updating! - 'Updater.exe'");
-
-                    retry:
-                    //Kill Process's
-                    foreach (Process process in new List<Process>(Process.GetProcesses().Where(process => process.ProcessName.ToLower() == "updater" || process.ProcessName.ToLower() == "run")))
-                        try { process.CloseMainWindow(); process.Close(); process.Kill(); } catch { }
-
-                    //Starting Updates
-                    Logs.LogEntries.Add("Starting Update Protocol");
-
-                    //Extract the Update and only get the Updater.exe
-                    using (ZipArchive archive = new ZipArchive(client.Updater(), ZipArchiveMode.Read))
+                    if (Version != Response)
                     {
-                        foreach (ZipArchiveEntry file in archive.Entries)
+                        MessageBox.Show("Updating! - 'Updater.exe'");
+
+                        retry:
+                        //Kill Process's
+                        foreach (Process process in new List<Process>(Process.GetProcesses().Where(process => process.ProcessName.ToLower() == "updater" || process.ProcessName.ToLower() == "run")))
+                            try { process.CloseMainWindow(); process.Close(); process.Kill(); } catch { }
+
+                        //Starting Updates
+                        Logs.LogEntries.Add("Starting Update Protocol");
+
+                        //Extract the Update and only get the Updater.exe
+                        object UpdateBuffer;
+
+                        if (client.Updater(out UpdateBuffer))
                         {
-                            if (File.Exists(Environment.CurrentDirectory + "\\" + file.Name))
-                                try { File.Delete(Environment.CurrentDirectory + "\\" + file.Name); } catch (Exception ex) { Logs.LogEntries.Add("Failed to Delete the File: " + file.FullName + "\nERROR:\n" + ex.ToString()); continue; }
+                            using (ZipArchive archive = new ZipArchive((MemoryStream)UpdateBuffer, ZipArchiveMode.Read))
+                            {
+                                foreach (ZipArchiveEntry file in archive.Entries)
+                                {
+                                    if (File.Exists(Environment.CurrentDirectory + "\\" + file.Name))
+                                        try { File.Delete(Environment.CurrentDirectory + "\\" + file.Name); } catch (Exception ex) { Logs.LogEntries.Add("Failed to Delete the File: " + file.FullName + "\nERROR:\n" + ex.ToString()); continue; }
 
-                            file.ExtractToFile(Environment.CurrentDirectory + "\\" + file.Name);
+                                    file.ExtractToFile(Environment.CurrentDirectory + "\\" + file.Name);
 
-                            Logs.LogEntries.Add("Extracting File: " + file.Name);
+                                    Logs.LogEntries.Add("Extracting File: " + file.Name);
+                                }
+                            }
                         }
-                    }
-
-                    if (File.Exists(Environment.CurrentDirectory + "\\Updater.exe"))
-                    {
-                        Logs.LogEntries.Add("Updater Executable Found!");
-
-                        Process process = new Process();
-                        ProcessStartInfo startInfo = new ProcessStartInfo()
+                        else
                         {
-                            WorkingDirectory = Environment.CurrentDirectory + "\\",
-                            //UseShellExecute = false,
-                            FileName = Environment.CurrentDirectory + "\\" + "Updater.exe",
-                            //WindowStyle = ProcessWindowStyle.Hidden,
-                            //CreateNoWindow = true,
-                            UseShellExecute = true,
-                            Verb = "runas"
-                        };
-                        process.StartInfo = startInfo;
-                        process.Start();
+                            MessageBox.Show("Update Failure - " + (string)UpdateBuffer);
+
+                            Environment.Exit(0);
+                        }
+
+                        if (File.Exists(Environment.CurrentDirectory + "\\Updater.exe"))
+                        {
+                            Logs.LogEntries.Add("Updater Executable Found!");
+
+                            Process process = new Process();
+                            ProcessStartInfo startInfo = new ProcessStartInfo()
+                            {
+                                WorkingDirectory = Environment.CurrentDirectory + "\\",
+                                //UseShellExecute = false,
+                                FileName = Environment.CurrentDirectory + "\\" + "Updater.exe",
+                                //WindowStyle = ProcessWindowStyle.Hidden,
+                                //CreateNoWindow = true,
+                                UseShellExecute = true,
+                                Verb = "runas"
+                            };
+                            process.StartInfo = startInfo;
+                            process.Start();
+                        }
+                        else
+                        {
+                            Logs.LogEntries.Add("AutoUpdater Executable Missing! -> Recovery: Trying to download AutoUpdater");
+
+                            goto retry;
+                        }
+
+                        Environment.Exit(0);
                     }
-                    else
+                }
+                else
+                {
+                    this.BeginInvoke((MethodInvoker)delegate
                     {
-                        Logs.LogEntries.Add("AutoUpdater Executable Missing! -> Recovery: Trying to download AutoUpdater");
+                        this.failedLogin.Text = Response;
+                        this.failedLogin.Visible = true;
+                    });
 
-                        goto retry;
-                    }
+                    this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = false; });
 
-                    Environment.Exit(0);
+                    Busy = false;
+
+                    return;
                 }
 
                 //Auto Login?????
@@ -110,6 +144,10 @@ namespace Main
                         {
                             MessageBox.Show("AutoLogin File cannot be removed");
                         }
+
+                        this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = false; });
+
+                        Busy = false;
 
                         return;
                     }
@@ -166,9 +204,9 @@ namespace Main
                     if (Convert.ToBoolean(useAutoLogin) && !Convert.ToBoolean(forumLogin))
                     {
                         Token TempToken = null;
-                        string Error = "";
+                        string Output = "";
 
-                        if (client.Login(Username.Text, Password.Text, "", ref TempToken, ref Error))
+                        if (client.Login(Username.Text, Password.Text, "", ref TempToken, out Output))
                         {
                             token = TempToken;
 
@@ -185,7 +223,7 @@ namespace Main
                         {
                             this.BeginInvoke((MethodInvoker)delegate
                             {
-                                this.failedLogin.Text = Error;
+                                this.failedLogin.Text = Output;
                                 this.failedLogin.Visible = true;
                             });
                         }
@@ -195,17 +233,15 @@ namespace Main
                     {
                         Logs.LogEntries.Add("Attempting to AutoLogin with OAuth");
 
-                        Logs.LogEntries.Add("Attempting to AutoLogin with OAuth");
-
                         string PrivateKey = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("+", "").Replace("=", "").Replace(@"/", "");
 
-                        Process process = Process.Start("https://maverickcheats.eu/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + ""); //FingerPrint.Value()
+                        Process process = Process.Start("https://MaverickCheats.net/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + ""); //FingerPrint.Value()
 
-                        string Error = "";
+                        string Output = "";
 
                         for (int i = 0; i < 10; i++)
                         {
-                            if (client.OAuth_Finish(PrivateKey, ref token, ref Error))
+                            if (client.OAuth_Finish(PrivateKey, ref token, out Output))
                             {
                                 Logs.LogEntries.Add("Login Found-" + token.AuthToken);
 
@@ -224,7 +260,7 @@ namespace Main
 
                         this.BeginInvoke((MethodInvoker)delegate
                         {
-                            this.failedLogin.Text = Error;
+                            this.failedLogin.Text = Output;
                             this.failedLogin.Visible = true;
                         });
                     }
@@ -242,6 +278,8 @@ namespace Main
                 }
 
                 this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = false; });
+
+                Busy = false;
             }).Start();
         }
         #endregion
@@ -249,14 +287,19 @@ namespace Main
         #region Login Button Events
         private void loginButton_Click(object sender, EventArgs e)
         {
+            if (Busy)
+                return;
+
+            Busy = true;
+
             new Thread(() =>
             {
                 this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = true; });
 
                 Token token = null;
-                string Error = "";
+                string Output = "";
 
-                if (client.Login(Username.Text, Password.Text, "", ref token, ref Error))
+                if (client.Login(Username.Text, Password.Text, "", ref token, out Output))
                 {
                     //Check if Either is Enabled or Disabled
                     if (File.Exists("autologin.data"))
@@ -310,16 +353,23 @@ namespace Main
                 }
                 else
                 {
-                    this.BeginInvoke((MethodInvoker)delegate { failedLogin.Text = Error; });
+                    this.BeginInvoke((MethodInvoker)delegate { failedLogin.Text = Output; });
                     this.BeginInvoke((MethodInvoker)delegate { failedLogin.Visible = true; });
                 }
 
                 this.BeginInvoke((MethodInvoker)delegate { pictureBox1.Visible = false; });
+
+                Busy = false;
             }).Start();
         }
 
         private void loginForum_Click(object sender, EventArgs e)
         {
+            if (Busy)
+                return;
+
+            Busy = true;
+
             //AutoLogin with Forum
             new Thread(() =>
             {
@@ -329,13 +379,13 @@ namespace Main
 
                 string PrivateKey = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("+", "").Replace("=", "").Replace(@"/", "");
 
-                Process process = Process.Start("https://maverickcheats.eu/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + ""); //FingerPrint.Value()
+                Process process = Process.Start("https://maverickcheats.net/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + ""); //FingerPrint.Value()
 
-                string Error = "";
+                string Output = "";
 
                 for (int i = 0; i < 10; i++)
                 {
-                    if (client.OAuth_Finish(PrivateKey, ref token, ref Error))
+                    if (client.OAuth_Finish(PrivateKey, ref token, out Output))
                     {
                         Logs.LogEntries.Add("Login Found-" + token.AuthToken);
 
@@ -386,10 +436,9 @@ namespace Main
                     Thread.Sleep(2500);
                 }
 
-                this.BeginInvoke((MethodInvoker)delegate { failedLogin.Text = Error; });
+                this.BeginInvoke((MethodInvoker)delegate { failedLogin.Text = Output; });
                 this.BeginInvoke((MethodInvoker)delegate { failedLogin.Visible = true; });
-            }
-            ).Start();
+            }).Start();
         }
 
         private void loginForum_MouseEnter(object sender, EventArgs e)

@@ -7,20 +7,28 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Windows.Forms;
 using MaverickServer.Database;
-using Main.HandleClient;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Web;
 
 namespace Main
 {
     public partial class Main : Form
     {
+        //Requests
+        public static List<string> RequestLogEnteries = new List<string>();
+        public static List<string> RateLimitingLogEnteries = new List<string>();
+        //TCP
+        public static List<string> TCPLogEnteries= new List<string>();
+        public static List<string> TCPExceptionLogEnteries = new List<string>();
+        //HTTP
+        public static List<string> HTTPLogEnteries = new List<string>();
+        public static List<string> HTTPExceptionLogEnteries = new List<string>();
+
         public Main()
         {
             InitializeComponent();
@@ -31,11 +39,25 @@ namespace Main
 
         private void HandleUnhandledException(Exception ex)
         {
-            this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText(ex.ToString() + Environment.NewLine); this.textBox1.Refresh(); });
+            AppendRequestLogs(ex.ToString());
         }
 
         private void Main_Load(object sender, EventArgs e)
         {
+            try
+            {
+                if (File.Exists(Environment.CurrentDirectory + "\\" + "Tokens.data"))
+                    using (FileStream FileStream = new FileStream(Environment.CurrentDirectory + "\\" + "Tokens.data", FileMode.Open, FileAccess.Read))
+                        lock (Cache.AuthTokens)
+                            Cache.AuthTokens = (List<Token>)new BinaryFormatter().Deserialize(FileStream);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: Loading Tokens Failed" + Environment.NewLine + ex.ToString());
+            }
+
+            new Thread(() => LogThread()).Start();
+
             new Thread(() => HTTPServer()).Start();
 
             new Thread(() => TCPServer()).Start();
@@ -63,137 +85,140 @@ namespace Main
                 i++;
             }
 
-            return temp_bytes.ToArray();
+            Bytes = temp_bytes.ToArray();
+
+            temp_bytes.Clear();
+
+            return Bytes;
         }
         #endregion
 
-        public void CacheThread()
+        public void LogThread()
         {
             while (true)
             {
-                //ReCache Server Data
-                Connect connect = new Connect();
+                string RequestLogText = "";
+                string RateLimitingLogText = "";
+                string TCPLogText = "";
+                string TCPExceptionLogText = "";
+                string HTTPLogText = "";
+                string HTTPExceptionLogText = "";
 
-                Cache.Version = connect.Version();
-
-                Cache.Products = connect.QueryProducts();
-
-                connect.Close();
-
-                List<HTTP_Connection> HTTP_Connections_Temp;
-
-                lock (Cache.HTTP_Connections)
+                #region RequestLogs
+                lock (RequestLogEnteries)
                 {
-                    HTTP_Connections_Temp = new List<HTTP_Connection>(Cache.HTTP_Connections);
-
-                    foreach (HTTP_Connection connection in HTTP_Connections_Temp.Where(Connection => Connection == null || Connection.HttpListenerContext == null || Connection.Exited || Connection.LastRequestDate.AddMinutes(5) < DateTime.Now))
-                    {
-                        this.BeginInvoke((MethodInvoker)delegate { textBox2.AppendText("Connection: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine); this.textBox2.Refresh(); });
-
-                        try
-                        {
-                            if (connection.Thread != null)
-                            {
-                                connection.Thread.Abort();
-
-                                connection.Thread = null;
-                            }
-
-                            if (connection.HttpListenerContext != null)
-                            {
-                                connection.HttpListenerContext.Response.Close();
-
-                                connection.HttpListenerContext = null;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            this.BeginInvoke((MethodInvoker)delegate { textBox2.AppendText("Disposing HTTP Socket Failed: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine); this.textBox2.Refresh(); });
-                            this.BeginInvoke((MethodInvoker)delegate { textBox2.AppendText("Error: " + ex.ToString() + Environment.NewLine); this.textBox2.Refresh(); });
-                        }
-
-                        Cache.HTTP_Connections.Remove(connection);
-                    }
+                    foreach (string RequestLog in RequestLogEnteries)
+                        RequestLogText += RequestLog;
                 }
+                #endregion
 
-                List<TCP_Connection> TCP_Connections_Temp;
-
-                lock (Cache.TCP_Connections)
+                #region RateLimitingLogs
+                lock (RateLimitingLogEnteries)
                 {
-                    TCP_Connections_Temp = new List<TCP_Connection>(Cache.TCP_Connections);
-
-                    foreach (TCP_Connection connection in TCP_Connections_Temp.Where(Connection => Connection == null || Connection.TcpClient == null || !Connection.TcpClient.Connected || Connection.LastRequestDate.AddMinutes(5) < DateTime.Now))
-                    {
-                        this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText("Connection: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine); this.textBox1.Refresh(); });
-
-                        try
-                        {
-                            if (connection.Thread != null)
-                            {
-                                connection.Thread.Abort();
-
-                                connection.Thread = null;
-                            }
-
-                            if (connection.TcpClient != null)
-                            {
-                                connection.TcpClient.Close();
-
-                                connection.TcpClient = null;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText("Disposing Socket Failed: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine); this.textBox1.Refresh(); });
-                            this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText("Error: " + ex.ToString() + Environment.NewLine); this.textBox1.Refresh(); });
-                        }
-
-                        Cache.TCP_Connections.Remove(connection);
-                    }
+                    foreach (string RateLimitingLog in RateLimitingLogEnteries)
+                        RateLimitingLogText += RateLimitingLog;
                 }
+                #endregion
 
-                //Remove Tokens
-                List<Token> AuthTokens_Temp;
-
-                lock (Cache.AuthTokens)
+                #region TCPLogEnteries
+                lock (TCPLogEnteries)
                 {
-                    AuthTokens_Temp = new List<Token>(Cache.AuthTokens);
-
-                    foreach (Token AuthToken in AuthTokens_Temp.Where(Token => Token.LastRequest.AddMinutes(5) < DateTime.Now))
-                    {
-                        Console.WriteLine("Token: " + AuthToken.AuthToken + " is too old. {" + AuthToken.LastRequest.ToString() + "}");
-
-                        Cache.AuthTokens.Remove(AuthToken);
-                    }
+                    foreach (string TCPLog in TCPLogEnteries)
+                        TCPLogText += TCPLog;
                 }
+                #endregion
 
-                List<OAuth> OAuth_Temp;
-
-                lock (Cache.OAuths)
+                #region TCPExceptionLogEnteries
+                lock (TCPExceptionLogEnteries)
                 {
-                    OAuth_Temp = new List<OAuth>(Cache.OAuths);
-
-                    foreach (OAuth OAuth in OAuth_Temp.Where(OAuth => OAuth.CreationDate.AddMinutes(5) < DateTime.Now))
-                    {
-                        Console.WriteLine("OAUth: " + OAuth.Member.UserID + ", " + OAuth.PrivateKey + " is too old. {" + OAuth.CreationDate.ToString() + "}");
-
-                        Cache.OAuths.Remove(OAuth);
-                    }
+                    foreach (string TCPExceptionLog in TCPExceptionLogEnteries)
+                        TCPExceptionLogText += TCPExceptionLog;
                 }
+                #endregion
 
-                this.BeginInvoke((MethodInvoker)delegate 
+                #region HTTPLogEnteries
+                lock (HTTPLogEnteries)
                 {
-                    VersionLabel.Text = "Version: " + Cache.Version;
-                    TCPInstancesLabel.Text = "TCP Instances: " + Cache.TCP_Connections.Count;
-                    HTTPInstancesLabel.Text = "HTTP Instances: " + Cache.HTTP_Connections.Count;
-                    OAuthInstancesLabel.Text = "OAuth Instances: " + Cache.OAuths.Count;
-                    AuthTokenInstancesLabel.Text = "AuthToken Instances: " + Cache.AuthTokens.Count;
-                    ProductInstancesLabel.Text = "Number of Products in Cache: " + Cache.Products.Count;
+                    foreach (string HTTPLog in HTTPLogEnteries)
+                        HTTPLogText += HTTPLog;
+                }
+                #endregion
 
-                    this.Refresh();
+                #region HTTPExceptionLogEnteries
+                lock (HTTPExceptionLogEnteries)
+                {
+                    foreach (string HTTPExceptionLog in HTTPExceptionLogEnteries)
+                        HTTPExceptionLogText += HTTPExceptionLog;
+                }
+                #endregion
+
+                this.Invoke((MethodInvoker)delegate {
+                    //RequestLogText
+                    if ((RequestLogs.TextLength + RequestLogText.Length) > RequestLogs.MaxLength)
+                        RequestLogs.Text = (RequestLogs.Text + RequestLogText).Substring((RequestLogs.TextLength + RequestLogText.Length) - RequestLogs.MaxLength);
+                    else
+                        RequestLogs.Text += RequestLogText;
+
+                    RequestLogs.SelectionStart = RequestLogs.TextLength;
+                    RequestLogs.ScrollToCaret();
+
+                    //RateLimitingLogText
+                    if ((RateLimitingLogs.TextLength + RateLimitingLogText.Length) > RateLimitingLogs.MaxLength)
+                        RateLimitingLogs.Text = (RateLimitingLogs.Text + RateLimitingLogText).Substring(RateLimitingLogs.TextLength + RateLimitingLogText.Length - RateLimitingLogs.MaxLength);
+                    else
+                        RateLimitingLogs.Text += RateLimitingLogText;
+
+                    RateLimitingLogs.SelectionStart = RateLimitingLogs.TextLength;
+                    RateLimitingLogs.ScrollToCaret();
+
+                    //TCPLogText
+                    if ((TCPLogs.TextLength + TCPLogText.Length) > TCPLogs.MaxLength)
+                        TCPLogs.Text = (TCPLogs.Text + TCPLogText).Substring(TCPLogs.TextLength + TCPLogText.Length - TCPLogs.MaxLength);
+                    else
+                        TCPLogs.Text += TCPLogText;
+
+                    TCPLogs.SelectionStart = TCPLogs.TextLength;
+                    TCPLogs.ScrollToCaret();
+
+                    //TCPExceptionLogText
+                    if ((TCPExceptions.TextLength + TCPExceptionLogText.Length) > TCPExceptions.MaxLength)
+                        TCPExceptions.Text = (TCPExceptions.Text + TCPExceptionLogText).Substring(TCPExceptions.TextLength + TCPExceptionLogText.Length - TCPExceptions.MaxLength);
+                    else
+                        TCPExceptions.Text += TCPExceptionLogText;
+
+                    TCPExceptions.SelectionStart = TCPExceptions.TextLength;
+                    TCPExceptions.ScrollToCaret();
+
+                    //HTTPLogText
+                    if ((HTTPLogs.TextLength + HTTPLogText.Length) > HTTPLogs.MaxLength)
+                        HTTPLogs.Text = (HTTPLogs.Text + HTTPLogText).Substring(HTTPLogs.TextLength + HTTPLogText.Length - HTTPLogs.MaxLength);
+                    else
+                        HTTPLogs.Text += HTTPLogText;
+
+                    HTTPLogs.SelectionStart = HTTPLogs.TextLength;
+                    HTTPLogs.ScrollToCaret();
+
+                    //HTTPExceptionLogText
+                    if ((HTTPExceptions.TextLength + HTTPExceptionLogText.Length) > HTTPExceptions.MaxLength)
+                        HTTPExceptions.Text = (HTTPExceptions.Text + HTTPExceptionLogText).Substring(HTTPExceptions.TextLength + HTTPExceptionLogText.Length - HTTPExceptions.MaxLength);
+                    else
+                        HTTPExceptions.Text += HTTPExceptionLogText;
+
+                    HTTPExceptions.SelectionStart = HTTPExceptions.TextLength;
+                    HTTPExceptions.ScrollToCaret();
                 });
 
-                Thread.Sleep(10000);
+                //Requests
+                RequestLogEnteries.Clear();
+                RateLimitingLogEnteries.Clear();
+                //TCP
+                TCPLogEnteries.Clear();
+                TCPExceptionLogEnteries.Clear();
+                //HTTP
+                HTTPLogEnteries.Clear();
+                HTTPExceptionLogEnteries.Clear();
+
+                Thread.Sleep(1000);
             }
         }
 
@@ -205,9 +230,11 @@ namespace Main
 
             while (true)
             {
+                HttpListenerContext HttpListenerContext = listener.GetContext();
+
                 Console.WriteLine("Opened HTTP Socket");
 
-                HTTP_Connection connection = new HTTP_Connection(listener.GetContext());
+                HTTP_Connection connection = new HTTP_Connection(HttpListenerContext);
 
                 connection.Thread = new Thread(() => HTTP_Thread(connection));
 
@@ -215,9 +242,9 @@ namespace Main
 
                 Cache.HTTP_Connections.Add(connection);
 
-                this.BeginInvoke((MethodInvoker)delegate { textBox2.AppendText("Starting HTTP Connection - " + connection.IP + Environment.NewLine); this.textBox2.Refresh(); });
+                AppendHTTPLogs("Starting HTTP Connection - " + connection.IP + Environment.NewLine);
 
-                Thread.Sleep(250);
+                Thread.Sleep(100);
             }
         }
 
@@ -229,11 +256,37 @@ namespace Main
 
             try
             {
+                if (connection.IP != "159.203.7.208")
+                {
+                    if (Cache.RateLimits.Any(RateLimits => RateLimits.IP == connection.IP))
+                    {
+                        RateLimit RateLimit = Cache.RateLimits.FirstOrDefault(ratelimits => ratelimits.IP == connection.IP);
+                        RateLimit.APIRequest();
+
+                        if (RateLimit.IsLimited())
+                        {
+                            AppendHTTPLogs("RateLimiting HTTP Connection - " + connection.IP + " due to {Connections: + " + RateLimit.Connections() + ", Requests: " + RateLimit.Requests() + "}" + Environment.NewLine);
+
+                            context.Response.ContentType = "text/plain";
+
+                            Bytes = Encoding.UTF8.GetBytes("RateLimited: (UTC Time): " + RateLimit.RateLimitedUntil.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"));
+
+                            goto RequestEnd;
+                        }
+                    }
+                    else
+                    {
+                        Cache.RateLimits.Add(new RateLimit(connection.IP));
+                    }
+                }
+
                 connection.LastRequestDate = DateTime.Now;
 
                 Functions.Request request = new Functions.Request(context.Request.Url.Query);
 
-                Console.WriteLine("Request URL: " + request.Data);
+                string IP = context.Request.RemoteEndPoint.Address.IsIPv4MappedToIPv6 ? context.Request.RemoteEndPoint.Address.MapToIPv4().ToString() : context.Request.RemoteEndPoint.Address.ToString();
+
+                Console.WriteLine("Request URL: " + request.Data + " Request IP: " + IP + " Request IP was IPv6: " + context.Request.RemoteEndPoint.Address.IsIPv4MappedToIPv6.ToString());
 
                 if (context.Request.UserAgent == "Auth")
                 {
@@ -258,7 +311,7 @@ namespace Main
                                         Console.WriteLine("RunningProduct Set");
                                     }
 
-                                    if (token.IP == context.Request.RemoteEndPoint.Address.ToString())
+                                    if (token.IP == IP)
                                     {
                                         token.LastRequest = DateTime.Now;
 
@@ -270,19 +323,19 @@ namespace Main
                                     }
                                     else
                                     {
-                                        Bytes = Encoding.UTF8.GetBytes("IP Not Authenticated - " + request.Get("Token") + ", " + context.Request.RemoteEndPoint.Address.ToString());
+                                        Bytes = Encoding.UTF8.GetBytes("IP Not Authenticated - " + request.Get("Token") + ", " + IP);
 
                                         Console.WriteLine("Not Authenticated");
                                     }
                                 }
                                 else
                                 {
-                                    Bytes = Encoding.UTF8.GetBytes("Token Not Authenticated - " + request.Get("Token") + ", " + context.Request.RemoteEndPoint.Address.ToString());
+                                    Bytes = Encoding.UTF8.GetBytes("Token Not Authenticated - " + request.Get("Token") + ", " + IP);
 
                                     Console.WriteLine("Not Authenticated");
                                 }
                             }
-                            else if (Cache.AuthTokens.Any(token => token.IP == context.Request.RemoteEndPoint.Address.ToString()))
+                            else if (Cache.AuthTokens.Any(token => token.IP == IP))
                             {
                                 Bytes = Encoding.UTF8.GetBytes("Authenticated");
 
@@ -290,7 +343,7 @@ namespace Main
                             }
                             else
                             {
-                                Bytes = Encoding.UTF8.GetBytes("Not Authenticated - " + context.Request.RemoteEndPoint.Address.ToString());
+                                Bytes = Encoding.UTF8.GetBytes("Not Authenticated - " + IP);
 
                                 Console.WriteLine("Not Authenticated");
                             }
@@ -299,7 +352,7 @@ namespace Main
                         {
                             if (request.Contains("Token"))
                             {
-                                if (Cache.AuthTokens.Any(token => token.AuthToken == request.Get("Token") && token.IP == context.Request.RemoteEndPoint.Address.ToString()))
+                                if (Cache.AuthTokens.Any(token => token.AuthToken == request.Get("Token") && token.IP == IP))
                                 {
                                     if (request.Contains("ProductID"))
                                     {
@@ -437,24 +490,29 @@ namespace Main
                     }
                 }
 
+                RequestEnd:
                 //application/octet-stream
                 context.Response.ContentLength64 = Bytes.Length;
                 context.Response.AddHeader("Date", DateTime.Now.ToString("r"));
                 context.Response.AppendHeader("Cache-Control", "no-cache");
 
                 context.Response.OutputStream.Write(Bytes, 0, Bytes.Length);
+                context.Response.OutputStream.Flush();
+                context.Response.OutputStream.Close();
 
                 context.Response.StatusCode = (int)HttpStatusCode.OK;
                 context.Response.Close();
             }
             catch (Exception ex)
             {
-                this.BeginInvoke((MethodInvoker)delegate { HTTPExceptions.AppendText("Exception for HTTP Connection: " + connection.IP + Environment.NewLine + ex.ToString()); this.HTTPExceptions.Refresh(); });
+                AppendHTTPExceptions("Exception for HTTP Connection: " + connection.IP + Environment.NewLine + ex.ToString());
             }
 
-            this.BeginInvoke((MethodInvoker)delegate { textBox2.AppendText("Exited HTTP Thread - " + connection.IP + Environment.NewLine); this.textBox2.Refresh(); });
+            AppendHTTPLogs("Exited HTTP Thread - " + connection.IP + Environment.NewLine);
 
-            connection.Exited = true;
+            Bytes = null;
+
+            connection.Close = true;
         }
 
         public void TCPServer()
@@ -466,6 +524,8 @@ namespace Main
             {
                 TcpClient client = server.AcceptTcpClient();
 
+                string IP = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
+
                 Console.WriteLine("Opened Socket");
 
                 TCP_Connection connection = new TCP_Connection(client);
@@ -476,9 +536,9 @@ namespace Main
 
                 Cache.TCP_Connections.Add(connection);
 
-                this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText("Starting Connection - " + ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString() + Environment.NewLine); this.textBox1.Refresh(); });
+                AppendTCPLogs("Starting Connection - " + connection.IP + Environment.NewLine);
 
-                Thread.Sleep(250);
+                Thread.Sleep(100);
             }
         }
 
@@ -489,14 +549,14 @@ namespace Main
             while (true)
             {
                 if (client == null)
-                    goto Close;
+                    break;
                 else if (!client.Connected)
-                    goto Close;
+                    break;
 
                 NetworkStream strm = client.GetStream();
 
                 if (strm == null)
-                    goto Close;
+                    break;
                 else if (!strm.DataAvailable)
                     goto Sleep;
 
@@ -505,18 +565,59 @@ namespace Main
 
                 try
                 {
+                    AppendRequestLogs(Environment.NewLine + "BinaryFormatter Init Started: " + connection.IP + Environment.NewLine + "Time: " + stopwatch.Elapsed.TotalMilliseconds + Environment.NewLine);
+
                     IFormatter formatter = new BinaryFormatter();
 
                     Console.WriteLine("Request Init");
+
+                    AppendRequestLogs(Environment.NewLine + "Request Init Started: " + connection.IP + Environment.NewLine + "Time: " + stopwatch.Elapsed.TotalMilliseconds + Environment.NewLine);
 
                     Request r = (Request)formatter.Deserialize(strm); // you have to cast the deserialized object 
 
                     Console.WriteLine("Recieved and Deserialized Request - " + stopwatch.Elapsed.TotalMilliseconds);
 
+                    AppendRequestLogs(Environment.NewLine + "Request Init Ended: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((r.Object != null && r.Object is string) ? (string)r.Object : "r.Object is NULL or not a String") + Environment.NewLine + "Time: " + stopwatch.Elapsed.TotalMilliseconds + Environment.NewLine);
+
                     connection.LastRequestDate = DateTime.Now;
+
+                    AppendRequestLogs(Environment.NewLine + "RateLimiting Check Started: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((r.Object != null && r.Object is string) ? (string)r.Object : "r.Object is NULL or not a String") + Environment.NewLine + "Time: " + stopwatch.Elapsed.TotalMilliseconds + Environment.NewLine);
+
+                    //RateLimit
+                    if (Cache.RateLimits.Any(ratelimits => ratelimits.IP == connection.IP))
+                    {
+                        RateLimit RateLimit = Cache.RateLimits.FirstOrDefault(ratelimits => ratelimits.IP == connection.IP);
+                        RateLimit.APIRequest();
+
+                        if (RateLimit.IsLimited())
+                        {
+                            AppendTCPLogs("RateLimiting TCP Requests - " + connection.IP + " due to {Connections: + " + RateLimit.Connections() + ", Requests: " + RateLimit.Requests() + "}" + Environment.NewLine);
+
+                            Response response = new Response("RateLimited", RateLimit.RateLimitedUntil, true);
+
+                            Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                            if (response.Error)
+                                AppendTCPLogs("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
+
+                            formatter.Serialize(strm, response);
+
+                            Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        Cache.RateLimits.Add(new RateLimit(connection.IP));
+                    }
+
+                    AppendRequestLogs(Environment.NewLine + "RateLimiting Check Ended: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((r.Object != null && r.Object is string) ? (string)r.Object : "r.Object is NULL or not a String") + Environment.NewLine + "Time: " + stopwatch.Elapsed.TotalMilliseconds + Environment.NewLine);
 
                     //Response
                     Console.WriteLine("Recieved: " + r.Command);
+
+                    AppendRequestLogs(Environment.NewLine + "Request Started: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((r.Object != null && r.Object is string) ? (string)r.Object : "r.Object is NULL or not a String") + Environment.NewLine + "Time: " + stopwatch.Elapsed.TotalMilliseconds + Environment.NewLine);
 
                     if (r.Command == "Version")
                     {
@@ -529,7 +630,7 @@ namespace Main
                         Console.WriteLine("Closed Database Database - " + stopwatch.Elapsed.TotalMilliseconds);
 
                         if (response.Error)
-                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+                            AppendTCPLogs("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
 
                         formatter.Serialize(strm, response);
 
@@ -537,57 +638,73 @@ namespace Main
                     }
                     else if (r.Command == "Updater")
                     {
-                        Response response = new Response("Updater", new MemoryStream());
+                        MemoryStream MemoryStream = new MemoryStream();
+
+                        Response response = new Response("Updater", MemoryStream);
 
                         //Upload File
                         Console.WriteLine("Reading File");
 
                         try
                         {
-                            response.Object = new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\" + "Updater.zip"));
+                            MemoryStream = new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\" + "Updater.zip"));
+
+                            response.Object = MemoryStream;
                         }
                         catch (Exception ex)
                         {
                             response = new Response("Update", "Server Error", true);
 
-                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Exception for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + Environment.NewLine + ex.ToString()); this.TCPExceptions.Refresh(); });
+                            AppendTCPExceptions("Exception for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + Environment.NewLine + ex.ToString());
 
                             Console.WriteLine(ex.ToString());
                         }
 
                         if (response.Error)
-                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+                            AppendTCPExceptions("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
 
                         formatter.Serialize(strm, response);
 
                         Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        response.Object = null;
+
+                        MemoryStream.Dispose();
                     }
                     else if (r.Command == "Update")
                     {
-                        Response response = new Response("Update", new MemoryStream());
+                        MemoryStream MemoryStream = new MemoryStream();
+
+                        Response response = new Response("Update", MemoryStream);
 
                         //Upload File
                         Console.WriteLine("Reading File");
 
                         try
                         {
-                            response.Object = new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\" + "Update.zip"));
+                            MemoryStream = new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\" + "Update.zip"));
+
+                            response.Object = MemoryStream;
                         }
                         catch (Exception ex)
                         {
                             response = new Response("Update", "Server Error", true);
 
-                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Exception for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + Environment.NewLine + ex.ToString()); this.TCPExceptions.Refresh(); });
+                            AppendTCPExceptions("Exception for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + Environment.NewLine + ex.ToString());
 
                             Console.WriteLine(ex.ToString());
                         }
 
                         if (response.Error)
-                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+                            AppendTCPExceptions("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
 
                         formatter.Serialize(strm, response);
 
                         Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        response.Object = null;
+
+                        MemoryStream.Dispose();
                     }
                     else if (r.Command == "Login")
                     {
@@ -601,7 +718,7 @@ namespace Main
 
                         int UserID = 0;
                         string AvatarURL = "";
-                        string Response = new WebClient().DownloadString("http://api.maverickcheats.eu/community/maverickcheats/login.php?Username=" + HttpUtility.UrlEncode(login.Username) + "&Password=" + HttpUtility.UrlEncode(login.Password) + "&HWID=" + HttpUtility.UrlEncode(login.HWID));
+                        string Response = new WebClient().DownloadString("http://api.maverickCheats.net/community/maverickcheats/login.php?Username=" + HttpUtility.UrlEncode(login.Username) + "&Password=" + HttpUtility.UrlEncode(login.Password) + "&HWID=" + HttpUtility.UrlEncode(login.HWID));
 
                         if (Response.Contains("%delimiter%"))
                         {
@@ -616,7 +733,7 @@ namespace Main
                                         if (Response.Split(new string[] { "%delimiter%" }, StringSplitOptions.None)[2] != "")
                                             AvatarURL = Response.Split(new string[] { "%delimiter%" }, StringSplitOptions.None)[2];
 
-                                        response = new Response("Login", Token.GenerateToken(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(), new Member(UserID, login.Username, AvatarURL)));
+                                        response = new Response("Login", Token.GenerateToken(connection.IP, new Member(UserID, login.Username, AvatarURL)));
                                     }
                                     else
                                     {
@@ -641,7 +758,7 @@ namespace Main
                         Console.WriteLine("Queried Response - " + stopwatch.Elapsed.TotalMilliseconds);
 
                         if (response.Error)
-                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+                            AppendTCPExceptions("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
 
                         formatter.Serialize(strm, response);
 
@@ -665,25 +782,25 @@ namespace Main
 
                                 if (OAuths != null)
                                 {
-                                    response = new Response("Login", Token.GenerateToken(((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(), new Member(OAuths.Member.UserID, OAuths.Member.Username, OAuths.Member.AvatarURL)));
+                                    response = new Response("Login", Token.GenerateToken(connection.IP, new Member(OAuths.Member.UserID, OAuths.Member.Username, OAuths.Member.AvatarURL)));
                                 
                                     Cache.OAuths.Remove(OAuths);
                                 }
                                 else
                                 {
-                                    response = new Response("OAuth", "Not Found");
+                                    response = new Response("OAuth", "Not Found", true);
                                 }
                             }
                             else
                             {
-                                response = new Response("OAuth", "Not Authenticated");
+                                response = new Response("OAuth", "Not Authenticated", true);
                             }
                         }
 
                         Console.WriteLine("Queried Response - " + stopwatch.Elapsed.TotalMilliseconds);
 
                         if (response.Error)
-                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+                            AppendTCPExceptions("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
 
                         formatter.Serialize(strm, response);
 
@@ -717,13 +834,15 @@ namespace Main
                         }
 
                         if (response.Error)
-                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+                            AppendTCPExceptions("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
 
                         formatter.Serialize(strm, response);
                     }
                     else if (r.Command == "Download")
                     {
-                        Response response = new Response("Download", new MemoryStream());
+                        MemoryStream MemoryStream = new MemoryStream();
+
+                        Response response = new Response("Download", MemoryStream);
 
                         Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
 
@@ -747,7 +866,9 @@ namespace Main
                                 //Upload File
                                 Console.WriteLine("Reading File");
 
-                                response.Object = new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\" + product.File));
+                                MemoryStream = new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Products\\" + product.File));
+
+                                response.Object = MemoryStream;
                             }
                             else
                             {
@@ -760,9 +881,15 @@ namespace Main
                         }
 
                         if (response.Error)
-                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+                            AppendTCPExceptions("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
 
                         formatter.Serialize(strm, response);
+
+                        Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        response.Object = null;
+
+                        MemoryStream.Dispose();
                     }
                     else if (r.Command == "Authenticate")
                     {
@@ -810,12 +937,166 @@ namespace Main
                         }
 
                         if (response.Error)
-                            this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine); this.TCPExceptions.Refresh(); });
+                            AppendTCPExceptions("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
 
                         formatter.Serialize(strm, response);
 
                         Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
                     }
+                    else if (r.Command == "SetAccountID")
+                    {
+                        Response response = new Response("SetAccountID");
+
+                        Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        NetworkTypes.Token token = (NetworkTypes.Token)r.Token;
+
+                        Console.WriteLine("Converted Token - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        Token AuthToken = Token.GetTokenByToken(token.AuthToken);
+
+                        if (AuthToken != null)
+                        {
+                            if (r.Object != null)
+                            {
+                                if (r.Object is GameAccountInfo)
+                                {
+                                    if (Cache.AuthTokens.Any(Token => Token.AuthToken == AuthToken.AuthToken))
+                                    {
+                                        Cache.AuthTokens.FirstOrDefault(Token => Token.AuthToken == AuthToken.AuthToken).GameAccountInfo = (GameAccountInfo)r.Object;
+
+                                        response = new Response("SetAccountID", r.Object);
+
+                                        AppendTCPLogs("Set Account ID(" + AuthToken.Member.Username + "): " + ((GameAccountInfo)response.Object).AccountID + " -> " + ((GameAccountInfo)response.Object).AccountName + Environment.NewLine);
+                                    }
+                                    else
+                                    {
+                                        response = new Response("SetAccountID", "Token not Found", true);
+                                    }
+                                }
+                                else
+                                {
+                                    response = new Response("SetAccountID", "GameIno was Invalid", true);
+                                }
+                            }
+                            else
+                            {
+                                response = new Response("SetAccountID", "No Name was Passed to the Server", true);
+                            }
+                        }
+                        else
+                        {
+                            response = new Response("SetAccountID", "Not Authenticated", true);
+                        }
+
+                        if (response.Error)
+                            AppendTCPExceptions("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
+
+                        formatter.Serialize(strm, response);
+
+                        Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
+                    }
+                    else if (r.Command == "CheckAccountID")
+                    {
+                        Response response = new Response("CheckAccountID");
+
+                        Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        NetworkTypes.Token token = (NetworkTypes.Token)r.Token;
+
+                        Console.WriteLine("Converted Token - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        Token AuthToken = Token.GetTokenByToken(token.AuthToken);
+
+                        if (AuthToken != null)
+                        {
+                            if (AuthToken.Member.UserID == 1 || AuthToken.Member.UserID == 122862 || AuthToken.Member.UserID == 122893)
+                            {
+                                if (r.Object != null)
+                                {
+                                    if (r.Object is List<string>)
+                                    {
+                                        List<NetworkTypes.Token> FoundAccounts = new List<NetworkTypes.Token>();
+
+                                        foreach (string AccountID in (List<string>)r.Object)
+                                        {
+                                            if (Cache.AuthTokens.Any(Token => Token.GameAccountInfo != null && Token.GameAccountInfo.AccountID == AccountID))
+                                            {
+                                                Token LocalToken = Cache.AuthTokens.FirstOrDefault(Token => Token.GameAccountInfo != null && Token.GameAccountInfo.AccountID == AccountID);
+
+                                                FoundAccounts.Add(new NetworkTypes.Token(new NetworkTypes.Member(LocalToken.Member.UserID, LocalToken.Member.Username, LocalToken.Member.AvatarImage), "", new GameAccountInfo(LocalToken.GameAccountInfo.AccountID, LocalToken.GameAccountInfo.AccountName)));
+
+                                                AppendTCPLogs("Found Account ID (" + LocalToken.GameAccountInfo.AccountID + "/" + LocalToken.GameAccountInfo.AccountName + "): " + LocalToken.Member.Username + Environment.NewLine);
+                                            }
+                                        }
+
+                                        //Check List and Send List
+                                        if (FoundAccounts.Count > 0)
+                                        {
+                                            response = new Response("CheckAccountID", FoundAccounts);
+                                        }
+                                        else
+                                        {
+                                            response = new Response("CheckAccountID", "Game IDs not Found", true);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        response = new Response("CheckAccountID", "No List was Passed to the Server", true);
+                                    }
+                                }
+                                else
+                                {
+                                    response = new Response("CheckAccountID", "No Name was Passed to the Server", true);
+                                }
+                            }
+                            else
+                            {
+                                response = new Response("CheckAccountID", "No Permission", true);
+                            }
+                        }
+                        else
+                        {
+                            response = new Response("CheckAccountID", "Not Authenticated", true);
+                        }
+
+                        if (response.Error)
+                            AppendTCPExceptions("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
+
+                        formatter.Serialize(strm, response);
+
+                        Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
+                    }
+                    /*
+                    else if (r.Command == "Notifications")
+                    {
+                        Response response = new Response("Notifications");
+
+                        Console.WriteLine("Processed Command - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        NetworkTypes.Token token = (NetworkTypes.Token)r.Token;
+
+                        Console.WriteLine("Converted Token - " + stopwatch.Elapsed.TotalMilliseconds);
+
+                        Token AuthToken = Token.GetTokenByToken(token.AuthToken);
+
+                        if (AuthToken != null)
+                        {
+                            Connect connect = new Connect("174.138.113.192", "community", "community", "L3UeZW0$9Fa5d$R&vfo$@BrCAoLoI32V");
+                        }
+                        else
+                        {
+                            response = new Response("Authenticate", "Not Authenticated", true);
+                        }
+
+                        if (response.Error)
+                            AppendTCPExceptions("Error for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((response != null && response.Object is string) ? (string)response.Object : "r.Object is NULL or not a String") + Environment.NewLine);
+
+                        formatter.Serialize(strm, response);
+
+                        Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
+                    }
+                    */
                     else if (r.Command == "Log")
                     {
                         Response response = new Response("Log");
@@ -824,32 +1105,204 @@ namespace Main
 
                         //Get Logs, Write Logs
 
+
                         formatter.Serialize(strm, response);
 
                         Console.WriteLine("Sent Request - " + stopwatch.Elapsed.TotalMilliseconds);
                     }
                     else
                     {
-                        this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Exception for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + Environment.NewLine + "Invalid Command - " + r.Command); this.TCPExceptions.Refresh(); });
+                        AppendTCPExceptions("Exception for TCP Connection: " + connection.IP + Environment.NewLine + "Command: " + r.Command + Environment.NewLine + "Invalid Command - " + r.Command);
 
                         formatter.Serialize(strm, new Response(r.Command, "Invalid Command", true));
                     }
+
+                    AppendRequestLogs(Environment.NewLine + "Request Complete: " + connection.IP + Environment.NewLine + "Command: " + r.Command + ", " + ((r.Object != null && r.Object is string) ? (string)r.Object : "r.Object is NULL or not a String") + Environment.NewLine + "Time: " + stopwatch.Elapsed.TotalMilliseconds + Environment.NewLine);
                 }
                 catch (Exception ex)
                 {
-                    this.BeginInvoke((MethodInvoker)delegate { TCPExceptions.AppendText("Exception for TCP Connection: " + connection.IP + Environment.NewLine + ex.ToString() + Environment.NewLine); this.TCPExceptions.Refresh(); });
+                    AppendTCPExceptions("Exception for TCP Connection: " + connection.IP + Environment.NewLine + ex.ToString() + Environment.NewLine);
 
                     break;
                 }
 
+                strm.Flush();
+
                 Sleep:
-                Thread.Sleep(100);
+                Thread.Sleep(25);
             }
 
-            Close:
-            this.BeginInvoke((MethodInvoker)delegate { textBox1.AppendText("Closing Connection - " + connection.IP + Environment.NewLine); this.textBox1.Refresh(); });
+            //Break
+            AppendTCPLogs("Closing Connection - " + connection.IP + Environment.NewLine);
 
             Console.Write("Exited Thread " + Thread.CurrentThread.ManagedThreadId);
+
+            client.Close();
+
+            connection.Close = true;
+        }
+
+        public void CacheThread()
+        {
+            while (true)
+            {
+                //ReCache Server Data
+                Connect connect = new Connect();
+
+                Cache.Version = connect.Version();
+
+                Cache.Products = connect.QueryProducts();
+
+                connect.Close();
+
+                //RateLimiter
+                //Connections
+
+                List<RateLimit> RateLimits_Temp;
+
+                lock (Cache.RateLimits)
+                {
+                    RateLimits_Temp = new List<RateLimit>(Cache.RateLimits);
+
+                    foreach (RateLimit RateLimit in RateLimits_Temp)
+                    {
+                        if (RateLimit.CleanUp())
+                        {
+                            Cache.RateLimits.Remove(RateLimit);
+
+                            AppendRateLimitingLogs("Rate Limit: " + RateLimit.IP + " is too old. {" + RateLimit.LastRequestDate.ToString() + "}" + Environment.NewLine);
+                        }
+                    }
+                }
+
+                List<HTTP_Connection> HTTP_Connections_Temp;
+
+                lock (Cache.HTTP_Connections)
+                {
+                    HTTP_Connections_Temp = new List<HTTP_Connection>(Cache.HTTP_Connections);
+
+                    foreach (HTTP_Connection connection in HTTP_Connections_Temp.Where(Connection => Connection == null || Connection.Close || Connection.HttpListenerContext == null || Connection.LastRequestDate.AddMinutes(1) < DateTime.Now))
+                    {
+                        AppendHTTPLogs("Connection: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine);
+
+                        try
+                        {
+                            if (connection.Thread != null)
+                            {
+                                connection.Thread.Abort();
+
+                                connection.Thread = null;
+                            }
+
+                            if (connection.HttpListenerContext != null)
+                            {
+                                if (connection.HttpListenerContext.Response != null)
+                                    connection.HttpListenerContext.Response.Close();
+
+                                connection.HttpListenerContext = null;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            AppendHTTPLogs("Disposing HTTP Socket Failed: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine);
+                            AppendHTTPLogs("Error: " + ex.ToString() + Environment.NewLine);
+                        }
+
+                        Cache.HTTP_Connections.Remove(connection);
+                    }
+                }
+
+                List<TCP_Connection> TCP_Connections_Temp;
+
+                lock (Cache.TCP_Connections)
+                {
+                    TCP_Connections_Temp = new List<TCP_Connection>(Cache.TCP_Connections);
+
+                    foreach (TCP_Connection connection in TCP_Connections_Temp.Where(Connection => Connection == null || Connection.Close || Connection.TcpClient == null || !Connection.TcpClient.Connected || Connection.LastRequestDate.AddMinutes(5) < DateTime.Now))
+                    {
+                        AppendTCPLogs("Connection: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine);
+
+                        try
+                        {
+                            if (connection.Thread != null)
+                            {
+                                connection.Thread.Abort();
+
+                                connection.Thread = null;
+                            }
+
+                            if (connection.TcpClient != null)
+                            {
+                                connection.TcpClient.Close();
+
+                                connection.TcpClient = null;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            AppendTCPLogs("Disposing Socket Failed: " + connection.IP + " is too old. {" + connection.LastRequestDate.ToString() + "}" + Environment.NewLine);
+                            AppendTCPLogs("Error: " + ex.ToString() + Environment.NewLine);
+                        }
+
+                        Cache.TCP_Connections.Remove(connection);
+                    }
+                }
+
+                //Remove Tokens
+                List<Token> AuthTokens_Temp;
+
+                lock (Cache.AuthTokens)
+                {
+                    AuthTokens_Temp = new List<Token>(Cache.AuthTokens);
+
+                    foreach (Token AuthToken in AuthTokens_Temp.Where(Token => Token.LastRequest.AddMinutes(5) < DateTime.Now))
+                    {
+                        Console.WriteLine("Token: " + AuthToken.AuthToken + " is too old. {" + AuthToken.LastRequest.ToString() + "}");
+                        if (AuthToken != null)
+                        {
+                            if (AuthToken.Member != null)
+                            {
+                                AuthToken.Member.Dispose();
+                            }
+                        }
+
+                        Cache.AuthTokens.Remove(AuthToken);
+                    }
+                }
+
+                List<OAuth> OAuth_Temp;
+
+                lock (Cache.OAuths)
+                {
+                    OAuth_Temp = new List<OAuth>(Cache.OAuths);
+
+                    foreach (OAuth OAuth in OAuth_Temp.Where(OAuth => OAuth.CreationDate.AddMinutes(5) < DateTime.Now))
+                    {
+                        Console.WriteLine("OAUth: " + OAuth.Member.UserID + ", " + OAuth.PrivateKey + " is too old. {" + OAuth.CreationDate.ToString() + "}");
+
+                        if (OAuth.Member != null)
+                        {
+                            OAuth.Member.Dispose();
+                        }
+
+                        Cache.OAuths.Remove(OAuth);
+                    }
+                }
+
+                this.Invoke((MethodInvoker)delegate
+                {
+                    VersionLabel.Text = "Version: " + Cache.Version;
+                    TCPInstancesLabel.Text = "TCP Instances: " + Cache.TCP_Connections.Count;
+                    HTTPInstancesLabel.Text = "HTTP Instances: " + Cache.HTTP_Connections.Count;
+                    OAuthInstancesLabel.Text = "OAuth Instances: " + Cache.OAuths.Count;
+                    AuthTokenInstancesLabel.Text = "AuthToken Instances: " + Cache.AuthTokens.Count;
+                    ProductInstancesLabel.Text = "Number of Products in Cache: " + Cache.Products.Count;
+
+                    this.Refresh();
+                });
+
+                Thread.Sleep(10000);
+            }
         }
 
         private void RefreshButton_Click(object sender, EventArgs e)
@@ -859,9 +1312,125 @@ namespace Main
             HTTPInstancesLabel.Text = "HTTP Instances: " + Cache.HTTP_Connections.Count;
             OAuthInstancesLabel.Text = "OAuth Instances: " + Cache.OAuths.Count;
             AuthTokenInstancesLabel.Text = "AuthToken Instances: " + Cache.AuthTokens.Count;
+            RateLimitInstancesLabel.Text = "RateLimiting Instances: " + Cache.RateLimits.Count;
             ProductInstancesLabel.Text = "Number of Products in Cache: " + Cache.Products.Count;
 
             this.Refresh();
+        }
+
+        private void UpdateButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                //Tokens.data
+                using (FileStream FileStream = new FileStream(Environment.CurrentDirectory + "\\" + "Tokens.data", FileMode.Create, FileAccess.Write))
+                    lock (Cache.AuthTokens)
+                        new BinaryFormatter().Serialize(FileStream, Cache.AuthTokens);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: Writing Tokens Failed" + Environment.NewLine + ex.ToString());
+            }
+
+            Environment.Exit(1);
+        }
+
+        public void AppendRequestLogs(string value)
+        {
+            lock (RequestLogEnteries)
+                RequestLogEnteries.Add(value);
+
+            /*
+            if (InvokeRequired)
+                this.BeginInvoke((MethodInvoker)delegate () { AppendRequestLogs(value); });
+            else
+                RequestLogs.Text += value;
+            */
+        }
+
+        public void AppendRateLimitingLogs(string value)
+        {
+            lock (RateLimitingLogEnteries)
+                RateLimitingLogEnteries.Add(value);
+
+            /*
+            if (InvokeRequired)
+                this.BeginInvoke((MethodInvoker)delegate () { AppendRateLimitingLogs(value); });
+            else
+                RateLimitingLogs.Text += value;
+            */
+        }
+
+        public void AppendTCPLogs(string value)
+        {
+            lock (TCPLogEnteries)
+                TCPLogEnteries.Add(value);
+
+            /*
+            if (InvokeRequired)
+                this.BeginInvoke((MethodInvoker)delegate () { AppendTCPLogs(value); });
+            else
+                TCPLogs.Text += value;
+            */
+        }
+
+        public void AppendHTTPLogs(string value)
+        {
+            lock (HTTPLogEnteries)
+                HTTPLogEnteries.Add(value);
+
+            /*
+            if (InvokeRequired)
+                this.BeginInvoke((MethodInvoker)delegate () { AppendHTTPLogs(value); });
+            else
+                HTTPLogs.Text += value;
+            */
+        }
+
+        public void AppendTCPExceptions(string value)
+        {
+            lock (TCPExceptionLogEnteries)
+                TCPExceptionLogEnteries.Add(value);
+
+            /*
+            if (InvokeRequired)
+                this.BeginInvoke((MethodInvoker)delegate () { AppendTCPExceptions(value); });
+            else
+                TCPExceptions.Text += value;
+            */
+        }
+
+        public void AppendHTTPExceptions(string value)
+        {
+            lock (HTTPExceptionLogEnteries)
+                HTTPExceptionLogEnteries.Add(value);
+
+            /*
+            if (InvokeRequired)
+                this.BeginInvoke((MethodInvoker)delegate () { AppendHTTPExceptions(value); });
+            else
+                HTTPExceptions.Text += value;
+            */
+        }
+
+        private void RequestLogsButton_Click(object sender, EventArgs e)
+        {
+            Clipboard.SetText(RequestLogs.Text);
+        }
+
+        private void RateLimitLogs_Click(object sender, EventArgs e)
+        {
+            Clipboard.SetText(RateLimitingLogs.Text);
+        }
+
+        private void TCPLogsButton_Click(object sender, EventArgs e)
+        {
+            Clipboard.SetText(TCPLogs.Text);
+        }
+
+        private void TCPExceptionsButton_Click(object sender, EventArgs e)
+        {
+            Clipboard.SetText(TCPExceptions.Text);
         }
     }
 }

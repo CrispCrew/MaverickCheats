@@ -15,6 +15,8 @@ namespace Main
         /// </summary>
         public static string Version = "";
 
+        public static List<RateLimit> RateLimits = new List<RateLimit>();
+
         /// <summary>
         /// TCP Instances
         /// </summary>

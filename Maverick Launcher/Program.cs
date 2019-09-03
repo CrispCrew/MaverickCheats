@@ -25,7 +25,7 @@ namespace Main
             EmbeddedResource.LoadAssembly("Main.Resources.NetworkTypes.dll", "NetworkTypes.dll");
 
             //Get embedded images if it isnt on the Disk
-            EmbeddedResource.LoadResource("Main.Resources.Spinner.gif", "Spinner.gif");
+            EmbeddedResource.LoadResource("Main.Resources.Logo (40x40).gif", "Logo (40x40).gif");
 
             //Set Debug Log to English
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;

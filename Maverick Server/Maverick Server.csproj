@@ -48,7 +48,7 @@
     </Reference>
     <Reference Include="NetworkTypes, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\NetworkTypes\bin\Debug\NetworkTypes.dll</HintPath>
+      <HintPath>..\NetworkTypes\bin\Release\NetworkTypes.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -67,7 +67,6 @@
     <Compile Include="Cache\Cache.cs" />
     <Compile Include="Database\Connect.cs" />
     <Compile Include="Functions\Encryption.cs" />
-    <Compile Include="HandleClient\HandleLogin.cs" />
     <Compile Include="Main.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -80,6 +79,7 @@
     <Compile Include="Types\Types.cs" />
     <EmbeddedResource Include="Main.resx">
       <DependentUpon>Main.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

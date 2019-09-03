@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -19,12 +20,14 @@ namespace Main.AuthLib
         /// <summary>
         /// The Server ClientSocket
         /// </summary>
-        TcpClient clientSocket = new TcpClient();
+        TcpClient clientSocket = null;
 
         /// <summary>
         /// The Network Stream
         /// </summary>
         NetworkStream serverStream = null;
+
+        bool Busy = false;
 
         /// <summary>
         /// Entry Point - Establishes Socket Connection
@@ -50,26 +53,69 @@ namespace Main.AuthLib
         /// </summary>
         private bool Connect()
         {
-            try
+            int tries = 0;
+            while (tries <= 5)
             {
-                clientSocket.NoDelay = true;
+                try
+                {
+                    clientSocket = new TcpClient();
 
-                clientSocket.Connect("94.23.27.204", 6060);
+                    clientSocket.NoDelay = true;
 
-                Logs.LogEntries.Add("Socket Connected");
+                    if (!clientSocket.ConnectAsync("94.23.27.204", 6060).Wait(1000))
+                        goto Continue;
 
-                return true;
+                    Logs.LogEntries.Add("Socket Connected");
+
+                    return true;
+                }
+                catch
+                {
+                    Logs.LogEntries.Add("Socket Not Available");
+                }
+
+                Continue:
+                tries++;
             }
-            catch
-            {
-                Logs.LogEntries.Add("Socket Disconnected");
 
-                return false;
-            }
+            Logs.LogEntries.Add("Server Unavailable");
+
+            return false;
         }
 
-        public string Version()
+        /// <summary>
+        /// Connect to the server
+        /// </summary>
+        private bool IsConnected()
         {
+            if (((clientSocket.Client.Poll(1000, SelectMode.SelectRead) && clientSocket.Client.Poll(1000, SelectMode.SelectWrite)) && clientSocket.Client.Available == 0) || !clientSocket.Connected)
+                return false;
+
+            return true;
+        }
+
+        public bool Version(out string Output)
+        {
+            IsBusy:
+            if (Busy)
+            {
+                Thread.Sleep(1000);
+
+                goto IsBusy;
+            }
+
+            Busy = true;
+
+            if (!IsConnected())
+            {
+                if (!Connect())
+                {
+                    Output = "Server Unavailable";
+
+                    return false;
+                }
+            }
+
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
@@ -93,11 +139,59 @@ namespace Main.AuthLib
 
             Logs.LogEntries.Add("Recieved: " + r.Message);
 
-            return (string)r.Object;
+            if (r.Error)
+            {
+                if (r.Message == "RateLimited")
+                {
+                    TimeSpan TimeSpan = DateTime.SpecifyKind((DateTime)r.Object, DateTimeKind.Utc).ToLocalTime().Subtract(DateTime.Now);
+
+                    Output = "Rate Limited for " + TimeSpan.Minutes + "m  " + TimeSpan.Seconds + "s";
+
+                    Busy = false;
+
+                    return false;
+                }
+                else
+                {
+                    Output = "Unknown Error - " + r.Message + ", " + ((r.Object is string) ? (string)r.Object : "");
+
+                    Busy = false;
+
+                    return false;
+                }
+            }
+
+            Output = (string)r.Object;
+
+            Busy = false;
+
+            return true;
         }
 
-        public MemoryStream Updater()
+        public bool Updater(out object Output)
         {
+            IsBusy:
+            if (Busy)
+            {
+                Thread.Sleep(1000);
+
+                goto IsBusy;
+            }
+
+            Busy = true;
+
+            if (!IsConnected())
+            {
+                if (!Connect())
+                {
+                    Output = "Server Unavailable";
+
+                    Busy = false;
+
+                    return false;
+                }
+            }
+
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
@@ -123,11 +217,59 @@ namespace Main.AuthLib
 
             stopwatch.Stop();
 
-            return (MemoryStream)r.Object;
+            if (r.Error)
+            {
+                if (r.Message == "RateLimited")
+                {
+                    TimeSpan TimeSpan = DateTime.SpecifyKind((DateTime)r.Object, DateTimeKind.Utc).ToLocalTime().Subtract(DateTime.Now);
+
+                    Output = "Rate Limited for " + TimeSpan.Minutes + "m  " + TimeSpan.Seconds + "s";
+
+                    Busy = false;
+
+                    return false;
+                }
+                else
+                {
+                    Output = "Unknown Error - " + r.Message + ", " + ((r.Object is string) ? (string)r.Object : "");
+
+                    Busy = false;
+
+                    return false;
+                }
+            }
+
+            Output = (MemoryStream)r.Object;
+
+            Busy = false;
+
+            return true;
         }
 
-        public MemoryStream Update()
+        public bool Update(out object Output)
         {
+            IsBusy:
+            if (Busy)
+            {
+                Thread.Sleep(1000);
+
+                goto IsBusy;
+            }
+
+            Busy = true;
+
+            if (!IsConnected())
+            {
+                if (!Connect())
+                {
+                    Output = "Server Unavailable";
+
+                    Busy = false;
+
+                    return false;
+                }
+            }
+
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
@@ -153,11 +295,59 @@ namespace Main.AuthLib
 
             stopwatch.Stop();
 
-            return (MemoryStream)r.Object;
+            if (r.Error)
+            {
+                if (r.Message == "RateLimited")
+                {
+                    TimeSpan TimeSpan = DateTime.SpecifyKind((DateTime)r.Object, DateTimeKind.Utc).ToLocalTime().Subtract(DateTime.Now);
+
+                    Output = "Rate Limited for " + TimeSpan.Minutes + "m  " + TimeSpan.Seconds + "s";
+
+                    Busy = false;
+
+                    return false;
+                }
+                else
+                {
+                    Output = "Unknown Error - " + r.Message + ", " + ((r.Object is string) ? (string)r.Object : "");
+
+                    Busy = false;
+
+                    return false;
+                }
+            }
+
+            Output = (MemoryStream)r.Object;
+
+            Busy = false;
+
+            return true;
         }
 
-        public bool Login(string Username, string Password, string HWID, ref Token token, ref string Error)
+        public bool Login(string Username, string Password, string HWID, ref Token Token, out string Output)
         {
+            IsBusy:
+            if (Busy)
+            {
+                Thread.Sleep(1000);
+
+                goto IsBusy;
+            }
+
+            Busy = true;
+
+            if (!IsConnected())
+            {
+                if (!Connect())
+                {
+                    Output = "Server Unavailable";
+
+                    Busy = false;
+
+                    return false;
+                }
+            }
+
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
@@ -181,21 +371,33 @@ namespace Main.AuthLib
 
             Logs.LogEntries.Add("Recieved: " + r.Message);
 
-            if (r.Error == false)
-                if (r.Object is Token)
-                    token = (Token)r.Object;
-                else
+            if (r.Error)
+            {
+                if (r.Message == "RateLimited")
                 {
-                    Error = (string)r.Object;
+                    TimeSpan TimeSpan = DateTime.SpecifyKind((DateTime)r.Object, DateTimeKind.Utc).ToLocalTime().Subtract(DateTime.Now);
+
+                    Output = "Rate Limited for " + TimeSpan.Minutes + "m  " + TimeSpan.Seconds + "s";
+
+                    Busy = false;
 
                     return false;
                 }
-            else
-            {
-                Error = (string)r.Object;
+                else
+                {
+                    Output = ((r.Object is string) ? (string)r.Object : "");
 
-                return false;
+                    Busy = false;
+
+                    return false;
+                }
             }
+
+            Token = (Token)r.Object;
+
+            Output = "Logged In";
+
+            Busy = false;
 
             return true;
         }
@@ -204,8 +406,30 @@ namespace Main.AuthLib
         /// Contacts server for Login Check
         /// </summary>
         /// <returns></returns>
-        public bool OAuth_Finish(string PrivateKey, ref Token Token, ref string Error)
+        public bool OAuth_Finish(string PrivateKey, ref Token Token, out string Output)
         {
+            IsBusy:
+            if (Busy)
+            {
+                Thread.Sleep(1000);
+
+                goto IsBusy;
+            }
+
+            Busy = true;
+
+            if (!IsConnected())
+            {
+                if (!Connect())
+                {
+                    Output = "Server Unavailable";
+
+                    Busy = false;
+
+                    return false;
+                }
+            }
+
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
@@ -229,27 +453,62 @@ namespace Main.AuthLib
 
             Logs.LogEntries.Add("Recieved: " + r.Message);
 
-            if (r.Error == false)
-                if (r.Object is Token)
-                    Token = (Token)r.Object;
-                else
+            if (r.Error)
+            {
+                if (r.Message == "RateLimited")
                 {
-                    Error = (string)r.Object;
+                    TimeSpan TimeSpan = DateTime.SpecifyKind((DateTime)r.Object, DateTimeKind.Utc).ToLocalTime().Subtract(DateTime.Now);
+
+                    Output = "Rate Limited for " + TimeSpan.Minutes + "m  " + TimeSpan.Seconds + "s";
+
+                    Busy = false;
 
                     return false;
                 }
-            else
-            {
-                Error = (string)r.Object;
+                else
+                {
+                    Output = ((r.Object is string) ? (string)r.Object : "");
 
-                return false;
+                    Busy = false;
+
+                    return false;
+                }
             }
+
+            Token = (Token)r.Object;
+
+            Output = "";
+
+            Busy = false;
 
             return true;
         }
 
-        public List<Product> Products(Token token)
+        public bool Products(Token token, out object Output)
         {
+            IsBusy:
+            if (Busy)
+            {
+                Thread.Sleep(1000);
+
+                goto IsBusy;
+            }
+
+            Busy = true;
+
+            //List<Product>
+            if (!IsConnected())
+            {
+                if (!Connect())
+                {
+                    Output = "Server Unavailable";
+
+                    Busy = false;
+
+                    return false;
+                }
+            }
+
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
@@ -275,11 +534,59 @@ namespace Main.AuthLib
 
             stopwatch.Stop();
 
-            return (List<Product>)r.Object;
+            if (r.Error)
+            {
+                if (r.Message == "RateLimited")
+                {
+                    TimeSpan TimeSpan = DateTime.SpecifyKind((DateTime)r.Object, DateTimeKind.Utc).ToLocalTime().Subtract(DateTime.Now);
+
+                    Output = "Rate Limited for " + TimeSpan.Minutes + "m  " + TimeSpan.Seconds + "s";
+
+                    Busy = false;
+
+                    return false;
+                }
+                else
+                {
+                    Output = ((r.Object is string) ? (string)r.Object : "");
+
+                    Busy = false;
+
+                    return false;
+                }
+            }
+
+            Output = (List<Product>)r.Object;
+
+            Busy = false;
+
+            return true;
         }
 
-        public MemoryStream Download(Token token, Product product)
+        public bool Download(Token token, Product product, out object Output)
         {
+            IsBusy:
+            if (Busy)
+            {
+                Thread.Sleep(1000);
+
+                goto IsBusy;
+            }
+
+            Busy = true;
+
+            if (!IsConnected())
+            {
+                if (!Connect())
+                {
+                    Output = "Server Unavailable";
+
+                    Busy = false;
+
+                    return false;
+                }
+            }
+
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
 
@@ -305,7 +612,33 @@ namespace Main.AuthLib
 
             stopwatch.Stop();
 
-            return (MemoryStream)r.Object;
+            if (r.Error)
+            {
+                if (r.Message == "RateLimited")
+                {
+                    TimeSpan TimeSpan = DateTime.SpecifyKind((DateTime)r.Object, DateTimeKind.Utc).ToLocalTime().Subtract(DateTime.Now);
+
+                    Output = "Rate Limited for " + TimeSpan.Minutes + "m  " + TimeSpan.Seconds + "s";
+
+                    Busy = false;
+
+                    return false;
+                }
+                else
+                {
+                    Output = ((r.Object is string) ? (string)r.Object : "");
+
+                    Busy = false;
+
+                    return false;
+                }
+            }
+
+            Output = (MemoryStream)r.Object;
+
+            Busy = false;
+
+            return true;
         }
     }
 }

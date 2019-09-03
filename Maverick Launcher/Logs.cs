@@ -15,7 +15,7 @@ namespace Main
 {
     public partial class Logs : Form
     {
-        public static ObservableCollection<string> LogEntries= new ObservableCollection<string>();
+        public static ObservableCollection<string> LogEntries = new ObservableCollection<string>();
 
         public Logs()
         {
@@ -31,14 +31,20 @@ namespace Main
 
         private void OnListChanged(object sender, NotifyCollectionChangedEventArgs args)
         {
-            foreach (var item in args.NewItems)
+            if (this.Visible)
             {
-                LogsTextBox.AppendText(item + Environment.NewLine);
+                this.BeginInvoke((MethodInvoker)delegate
+                {
+                    foreach (var item in args.NewItems)
+                    {
+                        LogsTextBox.AppendText(item + Environment.NewLine);
+                    }
+
+                    LogsTextBox.Refresh();
+
+                    Console.WriteLine("Added New Text to Logs");
+                });
             }
-
-            LogsTextBox.Refresh();
-
-            Console.WriteLine("Added New Text to Logs");
         }
 
         private void ShowLogs_Click(object sender, EventArgs e)

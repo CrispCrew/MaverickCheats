@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NetworkTypes;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -8,9 +9,125 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace Main
 {
+    public class RateLimit
+    {
+        public string IP;
+
+        public List<DateTime> ConnectionAttempts = new List<DateTime>();
+        public List<DateTime> APIRequestAttempts = new List<DateTime>();
+
+        public DateTime RateLimitedUntil = DateTime.MinValue;
+
+        public DateTime LastRequestDate = DateTime.Now;
+
+        public DateTime CreationDate = DateTime.Now;
+
+        public RateLimit(string IP)
+        {
+            this.IP = IP;
+        }
+
+        public int Connections()
+        {
+            lock (ConnectionAttempts)
+                return ConnectionAttempts.Count(date => date.AddMinutes(1) > DateTime.Now);
+        }
+
+        public int Requests()
+        {
+            lock (APIRequestAttempts)
+                return APIRequestAttempts.Count(date => date.AddMinutes(1) > DateTime.Now);
+        }
+
+        public void SocketConnected()
+        {
+            ConnectionAttempts.Add(DateTime.Now);
+
+            //Check
+            if (ConnectionAttempts.Count(date => date.AddMinutes(1) > DateTime.Now) > 50)
+                RateLimitedUntil = DateTime.Now.AddMinutes(5);
+
+            LastRequestDate = DateTime.Now;
+        }
+
+        public void APIRequest()
+        {
+            APIRequestAttempts.Add(DateTime.Now);
+
+            //Check
+            if (APIRequestAttempts.Count(date => date.AddMinutes(1) > DateTime.Now) > 50)
+                RateLimitedUntil = DateTime.Now.AddMinutes(5);
+
+            LastRequestDate = DateTime.Now;
+        }
+
+        public bool CleanUp()
+        {
+            //If this RateLimit is Old with no new Requests, remove the RateLimit Entry
+            if (LastRequestDate.AddMinutes(5) < DateTime.Now)
+            {
+                ConnectionAttempts.Clear();
+                APIRequestAttempts.Clear();
+
+                return true;
+            }
+            else
+            {
+                if (ConnectionAttempts.Count > 0)
+                {
+                    //Connections
+                    List<DateTime> ConnectionAttempts_Temp = new List<DateTime>();
+
+                    lock (ConnectionAttempts)
+                    {
+                        ConnectionAttempts_Temp = new List<DateTime>(ConnectionAttempts);
+
+                        foreach (DateTime connection in ConnectionAttempts_Temp)
+                        {
+                            if (connection.AddMinutes(1) < DateTime.Now)
+                            {
+                                ConnectionAttempts.Remove(connection);
+                            }
+                        }
+                    }
+                }
+
+                if (APIRequestAttempts.Count > 0)
+                {
+                    //Requests
+                    List<DateTime> APIRequestAttempts_Temp = new List<DateTime>();
+
+                    lock (APIRequestAttempts)
+                    {
+                        APIRequestAttempts_Temp = new List<DateTime>(APIRequestAttempts);
+
+                        foreach (DateTime request in APIRequestAttempts_Temp)
+                        {
+                            if (request.AddMinutes(1) < DateTime.Now)
+                            {
+                                APIRequestAttempts.Remove(request);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public bool IsLimited()
+        {
+            if (RateLimitedUntil > DateTime.Now)
+                return true;
+
+            return false;
+        }
+    }
+
     public class HTTP_Connection
     {
         public Thread Thread;
@@ -22,13 +139,13 @@ namespace Main
         public DateTime CreationDate;
         public DateTime LastRequestDate;
 
-        public bool Exited = false;
+        public bool Close = false;
 
         public HTTP_Connection(HttpListenerContext HttpListenerContext)
         {
             this.HttpListenerContext = HttpListenerContext;
 
-            this.IP = HttpListenerContext.Request.RemoteEndPoint.Address.ToString();
+            this.IP = HttpListenerContext.Request.RemoteEndPoint.Address.IsIPv4MappedToIPv6 ? HttpListenerContext.Request.RemoteEndPoint.Address.MapToIPv4().ToString() : HttpListenerContext.Request.RemoteEndPoint.Address.ToString();
 
             this.CreationDate = DateTime.Now;
             this.LastRequestDate = DateTime.Now;
@@ -40,7 +157,7 @@ namespace Main
 
             this.HttpListenerContext = HttpListenerContext;
 
-            this.IP = HttpListenerContext.Request.RemoteEndPoint.Address.ToString();
+            this.IP = HttpListenerContext.Request.RemoteEndPoint.Address.IsIPv4MappedToIPv6 ? HttpListenerContext.Request.RemoteEndPoint.Address.MapToIPv4().ToString() : HttpListenerContext.Request.RemoteEndPoint.Address.ToString();
 
             this.CreationDate = DateTime.Now;
             this.LastRequestDate = DateTime.Now;
@@ -57,6 +174,8 @@ namespace Main
 
         public DateTime CreationDate;
         public DateTime LastRequestDate;
+
+        public bool Close = false;
 
         public TCP_Connection(TcpClient TcpClient)
         {
@@ -99,12 +218,14 @@ namespace Main
         }
     }
 
+    [Serializable]
     public class Token
     {
         public string IP;
         public Member Member;
         public string AuthToken;
         public int RunningProduct = 0;
+        public GameAccountInfo GameAccountInfo;
         public DateTime LastRequest;
         public DateTime CreationDate;
 
@@ -113,21 +234,23 @@ namespace Main
 
         }
 
-        public Token(string IP, Member Member, string AuthToken)
+        public Token(string IP, Member Member, string AuthToken, GameAccountInfo GameAccountInfo)
         {
             this.IP = IP;
             this.Member = Member;
             this.AuthToken = AuthToken;
+            this.GameAccountInfo = GameAccountInfo;
             this.LastRequest = DateTime.Now;
             this.CreationDate = DateTime.Now;
         }
 
-        public Token(string IP, Member Member, string AuthToken, int RunningProduct = 0)
+        public Token(string IP, Member Member, string AuthToken, GameAccountInfo GameAccountInfo, int RunningProduct = 0)
         {
             this.IP = IP;
             this.Member = Member;
             this.AuthToken = AuthToken;
             this.RunningProduct = RunningProduct;
+            this.GameAccountInfo = GameAccountInfo;
             this.LastRequest = DateTime.Now;
             this.CreationDate = DateTime.Now;
         }
@@ -192,12 +315,12 @@ namespace Main
         public static NetworkTypes.Token GenerateToken(string IP, Member Member)
         {
             //Check if the IP is Null or Invalid
-            Token Token = new Token(IP, Member, Convert.ToBase64String(Guid.NewGuid().ToByteArray()));
+            Token Token = new Token(IP, Member, Convert.ToBase64String(Guid.NewGuid().ToByteArray()), new GameAccountInfo("New Token", "New Token"));
 
             //While the token we generated is already used, try and regen a new one
             while (Cache.AuthTokens.Any(token => token.AuthToken == Token.AuthToken))
             {
-                Token = new Token(IP, Member, Convert.ToBase64String(Guid.NewGuid().ToByteArray()));
+                Token = new Token(IP, Member, Convert.ToBase64String(Guid.NewGuid().ToByteArray()), new GameAccountInfo("New Token", "New Token"));
             }
 
             lock (Cache.AuthTokens)
@@ -206,10 +329,11 @@ namespace Main
                 Cache.AuthTokens.Add(Token);
             }
 
-            return new NetworkTypes.Token(new NetworkTypes.Member(Member.Username, Member.AvatarImage), Token.AuthToken);
+            return new NetworkTypes.Token(new NetworkTypes.Member(Member.UserID, Member.Username, Member.AvatarImage), Token.AuthToken);
         }
     }
 
+    [Serializable]
     public class Member
     {
         public int UserID;
@@ -219,14 +343,17 @@ namespace Main
 
         public Image AvatarImage = null;
 
+        public Member()
+        {
+
+        }
+
         public Member(int UserID, string Username, string AvatarURL)
         {
             this.UserID = UserID;
             this.Username = Username;
 
             this.AvatarURL = AvatarURL;
-
-            Console.WriteLine(AvatarURL);
 
             try
             {
@@ -239,17 +366,23 @@ namespace Main
 
                     File.WriteAllBytes(Environment.CurrentDirectory + "\\Members\\" + UserID + "\\" + Path.GetFileName(AvatarURL), bytes);
 
-                    this.AvatarImage = Image.FromStream(new MemoryStream(new WebClient().DownloadData(AvatarURL)));
+                    this.AvatarImage = Image.FromFile(Environment.CurrentDirectory + "\\Members\\" + UserID + "\\" + Path.GetFileName(AvatarURL));
                 }
                 else
                 {
-                    this.AvatarImage = Image.FromStream(new MemoryStream(File.ReadAllBytes(Environment.CurrentDirectory + "\\Members\\" + UserID + "\\" + Path.GetFileName(AvatarURL))));
+                    this.AvatarImage = Image.FromFile(Environment.CurrentDirectory + "\\Members\\" + UserID + "\\" + Path.GetFileName(AvatarURL));
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
+        }
+
+        public void Dispose()
+        {
+            if (AvatarImage != null)
+                AvatarImage.Dispose();
         }
     }
 }

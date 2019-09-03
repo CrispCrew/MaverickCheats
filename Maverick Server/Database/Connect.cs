@@ -101,17 +101,17 @@ namespace MaverickServer.Database
         /// <returns></returns>
         public static List<Product> QueryUserProducts(int ID)
         {
-            List<Product> temp = new List<Product>();
-
             //If IsAdmin (Forum Permission Check?) , give all products
             if (ID == 1)
                 return Cache.Products;
+
+            List<Product> temp = new List<Product>();
 
             //Add Free Products
             temp.AddRange(Cache.Products.Where(product => product.Free == 1));
 
             //API Request for Paid Products
-            string Products = new WebClient().DownloadString("http://api.maverickcheats.eu/community/maverickcheats/productcheck.php?UserID=" + ID);
+            string Products = new WebClient().DownloadString("http://api.maverickCheats.net/community/maverickcheats/productcheck.php?UserID=" + ID);
 
             //No Paid Products
             if (Products == "")
@@ -164,12 +164,11 @@ namespace MaverickServer.Database
         #endregion
 
         #region Notification
-        /*
         public List<Notification> QueryNotifications()
         {
             List<Notification> temp = new List<Notification>();
 
-            using (MySqlCommand command = new MySqlCommand("SELECT * FROM Notifications", connection))
+            using (MySqlCommand command = new MySqlCommand("SELECT * FROM core_notifications", connection))
             {
                 using (MySqlDataReader reader = command.ExecuteReader())
                 {
@@ -177,9 +176,11 @@ namespace MaverickServer.Database
                     {
                         Debug.WriteLine("Reading Products");
 
+                        /*
                         Notification notification = new Notification(reader);
 
                         temp.Add(notification);
+                        */
                     }
                 }
             }
@@ -187,6 +188,7 @@ namespace MaverickServer.Database
             return temp;
         }
 
+        /*
         public bool ReadNotification(int UserID, int NotificationID, ref DateTime ReadDate)
         {
             MySqlCommand com = new MySqlCommand("SELECT Count(*) FROM notification_read WHERE UserID=@UserID AND NotificationID=@NotificationID", connection);

@@ -97,6 +97,8 @@ namespace NetworkTypes
 
         public string AuthToken;
 
+        public GameAccountInfo GameAccountInfo = null;
+
         public Token(string AuthToken)
         {
             this.AuthToken = AuthToken;
@@ -107,17 +109,28 @@ namespace NetworkTypes
             this.Member = Member;
             this.AuthToken = AuthToken;
         }
+
+        public Token(Member Member, string AuthToken, GameAccountInfo GameAccountInfo)
+        {
+            this.Member = Member;
+            this.AuthToken = AuthToken;
+            this.GameAccountInfo = GameAccountInfo;
+        }
     }
 
     [Serializable]
     public class Member
     {
+        public int UserID;
+
         public string Username;
 
         public Image Avatar;
 
-        public Member(string Username, Image Avatar)
+        public Member(int UserID, string Username, Image Avatar)
         {
+            this.UserID = UserID;
+
             this.Username = Username;
 
             this.Avatar = Avatar;
@@ -125,9 +138,32 @@ namespace NetworkTypes
     }
 
     /// <summary>
+    /// Token - Authentication (Recieve/Send)
+    /// </summary>
+    [Serializable]
+    public class GameAccountInfo
+    {
+        public string AccountID = "";
+
+        public string AccountName = "";
+
+        public GameAccountInfo()
+        {
+            AccountID = "";
+            AccountName = "";
+        }
+
+        public GameAccountInfo(string AccountID, string AccountName)
+        {
+            this.AccountID = AccountID;
+            this.AccountName = AccountName;
+        }
+    }
+
+    /// <summary>
     /// Product (Recieve/Send)
     /// </summary>
-   [Serializable]
+    [Serializable]
     public class Product
     {
         public int Id; //UID
@@ -166,7 +202,7 @@ namespace NetworkTypes
         //Get rid of
         private byte[] TryReadProductImage()
         {
-            List<byte> bytes = new List<byte>(new byte[] { });
+            List<byte> bytes = new List<byte>();
 
             try
             {
@@ -244,16 +280,10 @@ namespace NetworkTypes
     public class Notification
     {
         public int ID;
-        public string Title;
-        public string Message;
-        public DateTime CreationDate;
 
-        public Notification(int ID, string Title, string Message, DateTime CreationDate)
+        public Notification()
         {
-            this.ID = ID;
-            this.Title = Title;
-            this.Message = Message;
-            this.CreationDate = CreationDate;
+
         }
     }
 }
