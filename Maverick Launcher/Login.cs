@@ -235,7 +235,7 @@ namespace Main
 
                         string PrivateKey = Convert.ToBase64String(Guid.NewGuid().ToByteArray()).Replace("+", "").Replace("=", "").Replace(@"/", "");
 
-                        Process process = Process.Start("https://MaverickCheats.net/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + ""); //FingerPrint.Value()
+                        Process process = Process.Start("https://MaverickCheats.net/community/maverickcheats/launcher/OAuth.php?PrivateKey=" + PrivateKey + "&HWID=" + FingerPrint.Value());
 
                         string Output = "";
 

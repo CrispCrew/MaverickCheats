@@ -70,7 +70,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="NetworkTypes">
-      <HintPath>..\NetworkTypes\bin\Release\NetworkTypes.dll</HintPath>
+      <HintPath>..\NetworkTypes\bin\Debug\NetworkTypes.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />

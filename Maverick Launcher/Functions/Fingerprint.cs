@@ -26,10 +26,6 @@ namespace Main.Functions
                 Stopwatch timer = new Stopwatch();
                 timer.Start();
 
-                CPU = GetHash(cpuId());
-
-                Console.WriteLine(CPU + " found in " + timer.Elapsed.TotalMilliseconds + "ms");
-
                 BIOS = GetHash(biosId());
 
                 Console.WriteLine(BIOS + " found in " + timer.Elapsed.TotalMilliseconds + "ms");
@@ -38,6 +34,10 @@ namespace Main.Functions
 
                 Console.WriteLine(BASE + " found in " + timer.Elapsed.TotalMilliseconds + "ms");
 
+                CPU = GetHash(cpuId());
+
+                Console.WriteLine(CPU + " found in " + timer.Elapsed.TotalMilliseconds + "ms");
+
                 VIDEO = GetHash(videoId());
 
                 Console.WriteLine(VIDEO + " found in " + timer.Elapsed.TotalMilliseconds + "ms");
@@ -45,6 +45,10 @@ namespace Main.Functions
                 SYSTEM = GetHash(OSid());
 
                 Console.WriteLine(SYSTEM + " found in " + timer.Elapsed.TotalMilliseconds + "ms");
+
+                DISKS = GetHash(diskId());
+
+                Console.WriteLine(DISKS + " found in " + timer.Elapsed.TotalMilliseconds + "ms");
 
                 HWID = GetHash("BIOS >> " + BIOS + "\nBASE >> " + BASE + "\nCPU >> " + CPU + "\nVIDEO >> " + VIDEO + "\nOS >> " + SYSTEM + "\nDISKS >> " + DISKS, true);
 
@@ -130,21 +134,17 @@ namespace Main.Functions
             string id = "";
             foreach (ManagementObject mo in mbsList)
             {
-                if (id == "")
+                try
                 {
-                    try
-                    {
-                        id = mo[wmiProperty].ToString();
-                        break;
-                    }
-                    catch
-                    {
+                    id += mo[wmiProperty].ToString() + ",";
+                }
+                catch
+                {
 
-                    }
                 }
             }
 
-            return id;
+            return id.TrimEnd(',');
         }
         //BIOS Identifier
         private static string biosId()
@@ -164,13 +164,9 @@ namespace Main.Functions
         //CPU Identifier
         private static string cpuId()
         {
-            //Uses first CPU identifier available in order of preference
-            //Don't get all identifiers, as it is very time consuming
-            string retVal = identifier("Win32_Processor", "Name")
+            return identifier("Win32_Processor", "Name")
                 + identifier("Win32_Processor", "Manufacturer")
                 + identifier("Win32_Processor", "ProcessorId");
-
-            return retVal;
         }
         //Primary video controller ID
         private static string videoId()
@@ -192,6 +188,7 @@ namespace Main.Functions
         private static string OSid()
         {
             return identifier("Win32_OperatingSystem", "Name")
+                + identifier("Win32_OperatingSystem", "CSName")
                 + identifier("Win32_OperatingSystem", "SerialNumber")
                 + identifier("Win32_OperatingSystem", "RegisteredUser");
         }
